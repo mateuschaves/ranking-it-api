@@ -8,7 +8,7 @@ export class UserRepository {
 
     async create(data: Prisma.UserCreateInput) {
         try {
-            return this.prismaService.user.create({data});
+            return await this.prismaService.user.create({data});
         } catch (e) {
             Logger.error('Error in UserRepository.create', e);
             throw e;
@@ -17,7 +17,7 @@ export class UserRepository {
 
     async findOne(where: Prisma.UserWhereUniqueInput) {
         try {
-            return this.prismaService.user.findUnique({where});
+            return await this.prismaService.user.findUnique({where});
         } catch (e) {
             Logger.error('Error in UserRepository.findOne', e);
             throw e;
@@ -26,7 +26,7 @@ export class UserRepository {
 
     async findMany() {
         try {
-            return this.prismaService.user.findMany();
+            return await this.prismaService.user.findMany();
         } catch (e) {
             Logger.error('Error in UserRepository.findMany', e);
             throw e;
@@ -35,7 +35,7 @@ export class UserRepository {
 
     async update(where: Prisma.UserWhereUniqueInput, data: Prisma.UserUpdateInput) {
         try {
-            return this.prismaService.user.update({where, data});
+            return await this.prismaService.user.update({where, data});
         } catch (e) {
             Logger.error('Error in UserRepository.update', e);
             throw e;
