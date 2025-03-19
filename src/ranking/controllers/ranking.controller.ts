@@ -4,12 +4,17 @@ import CreateRankingDto from "../dto/create-ranking.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {GetUser} from "../../user/decorators/get-current-user.decorator";
 import CreateRankingItemDto from "../dto/create-ranking-item.dto";
+import {RankingItemService} from "../services/ranking-item.service";
+import {RankingUserService} from "../services/ranking-user.service";
 
 @Controller('rankings')
 @UseGuards(AuthGuard('jwt'))
 export class RankingController {
-    constructor( private readonly rankingService: RankingService) {
-    }
+    constructor(
+        private readonly rankingService: RankingService,
+        private readonly rankingItemService: RankingItemService,
+        private readonly rankingUserService: RankingUserService
+    ) {}
 
     @Post('')
     async createRanking(@Body() createRankingDto: CreateRankingDto, @GetUser() userId: string) {
@@ -27,7 +32,7 @@ export class RankingController {
         Logger.log(
             `Getting all rankings for user ${JSON.stringify(userId)}`,
             RankingController.name)
-        return await this.rankingService.getAllRankingsByUserId(userId);
+        return await this.rankingUserService.getAllRankingsByUserId(userId);
     }
 
     @Post(':rankingId/items')
@@ -42,7 +47,7 @@ export class RankingController {
         createRankingItemDto.createdById = userId;
         createRankingItemDto.rankingId = rankingId;
 
-        return await this.rankingService.createRankingItem(createRankingItemDto);
+        return await this.rankingItemService.createRankingItem(createRankingItemDto);
     }
 
     @Get(':rankingId/items')
@@ -53,7 +58,7 @@ export class RankingController {
         })
 
         Logger.log('Getting ranking items', RankingController.name)
-        return await this.rankingService.getRankingItems(rankingId, userId);
+        return await this.rankingItemService.getRankingItems(rankingId, userId);
     }
 
     @Delete(':rankingId/items/:rankingItemId')
@@ -65,6 +70,6 @@ export class RankingController {
         })
 
         Logger.log('Deleting ranking item', RankingController.name)
-        await this.rankingService.deleteRankingItem(rankingItemId, userId);
+        await this.rankingItemService.deleteRankingItem(rankingItemId, userId);
     }
 }
