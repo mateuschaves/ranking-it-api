@@ -20,9 +20,11 @@ model User {
   name     String?
   password String
 
-  ranking       Ranking[]
-  userRanking   UserRanking[]
-  rankingInvite RankingInvite[]
+  ranking            Ranking[]
+  userRanking        UserRanking[]
+  rankingInvite      RankingInvite[]
+  rankingItemComment RankingItemComment[]
+  rankingItem        RankingItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,9 +47,14 @@ model Ranking {
 }
 
 model RankingItem {
-  id          String   @id @default(cuid())
-  rankingId   String
-  ranking     Ranking  @relation(fields: [rankingId], references: [id])
+  id            String @id @default(cuid())
+  rankingId     String
+  createdById   String
+  createdByUser User   @relation(fields: [createdById], references: [id])
+
+  ranking            Ranking              @relation(fields: [rankingId], references: [id])
+  rankingItemComment RankingItemComment[]
+
   name        String
   description String?
   photo       String?
@@ -56,6 +63,18 @@ model RankingItem {
   link        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model RankingItemComment {
+  id            String      @id @default(cuid())
+  rankingItemId String
+  userId        String
+  comment       String
+  rankingItem   RankingItem @relation(fields: [rankingItemId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UserRanking {
