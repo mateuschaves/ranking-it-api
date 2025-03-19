@@ -1,11 +1,12 @@
 import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {RankingRepository} from "../repositories/ranking.repository";
 import {RankingValidationsService} from "./ranking-validations.service";
+import {RankingUserRepository} from "../repositories/ranking-user.repository";
 
 @Injectable()
 export class RankingUserService {
     constructor(
-        private readonly rankingRepository: RankingRepository,
+        private readonly rankingUserRepository: RankingUserRepository,
         private readonly rankingValidationService: RankingValidationsService
     ) {}
 
@@ -13,7 +14,7 @@ export class RankingUserService {
         try {
             await this.rankingValidationService.existUser(userId);
 
-            return await this.rankingRepository.getAllRankingsByUserId(userId);
+            return await this.rankingUserRepository.getAllRankingsByUserId(userId);
         } catch (error) {
             if (error instanceof BadRequestException) {
                 throw error;

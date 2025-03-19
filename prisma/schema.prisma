@@ -25,6 +25,7 @@ model User {
   rankingInvite      RankingInvite[]
   rankingItemComment RankingItemComment[]
   rankingItem        RankingItem[]
+  rankingItemScore   RankingItemScore[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -54,6 +55,7 @@ model RankingItem {
 
   ranking            Ranking              @relation(fields: [rankingId], references: [id])
   rankingItemComment RankingItemComment[]
+  rankingItemScore   RankingItemScore[]
 
   name        String
   description String?
@@ -72,6 +74,19 @@ model RankingItemComment {
   comment       String
   rankingItem   RankingItem @relation(fields: [rankingItemId], references: [id])
   user          User        @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RankingItemScore {
+  id            String @id @default(cuid())
+  rankingItemId String
+  userId        String
+  score         Int
+
+  rankingItem RankingItem @relation(fields: [rankingItemId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

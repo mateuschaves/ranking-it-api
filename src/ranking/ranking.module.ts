@@ -6,9 +6,26 @@ import {RankingRepository} from "./repositories/ranking.repository";
 import {RankingItemService} from "./services/ranking-item.service";
 import {RankingValidationsService} from "./services/ranking-validations.service";
 import {RankingUserService} from "./services/ranking-user.service";
+import {RankingItemRepository} from "./repositories/ranking-item.repository";
+import {RankingUserRepository} from "./repositories/ranking-user.repository";
+import {RankingScoreRepository} from "./repositories/ranking-score.repository";
+import {RankingScoreService} from "./services/ranking-score.service";
+import {RankingItemController} from "./controllers/ranking-item.controller";
+import {RankingScoreController} from "./controllers/ranking-score.controller";
 
 @Module({
-  controllers: [RankingController],
-  providers: [RankingService, RankingItemService, RankingValidationsService, RankingUserService, UserRepository, RankingRepository],
+  controllers: [RankingController, RankingItemController, RankingScoreController],
+  providers: [
+      RankingService,
+      RankingItemService,
+      RankingValidationsService,
+      RankingUserService,
+      RankingScoreService,
+      UserRepository,
+      RankingRepository,
+      RankingItemRepository,
+      RankingUserRepository,
+      RankingScoreRepository
+  ],
 })
 export class RankingModule {}

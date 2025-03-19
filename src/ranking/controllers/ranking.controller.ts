@@ -1,10 +1,8 @@
-import {Body, Controller, Delete, Get, Logger, Param, Post, UseGuards} from '@nestjs/common';
+import {Body, Controller, Get, Logger, Post, UseGuards} from '@nestjs/common';
 import {RankingService} from "../services/ranking.service";
 import CreateRankingDto from "../dto/create-ranking.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {GetUser} from "../../user/decorators/get-current-user.decorator";
-import CreateRankingItemDto from "../dto/create-ranking-item.dto";
-import {RankingItemService} from "../services/ranking-item.service";
 import {RankingUserService} from "../services/ranking-user.service";
 
 @Controller('rankings')
@@ -12,13 +10,11 @@ import {RankingUserService} from "../services/ranking-user.service";
 export class RankingController {
     constructor(
         private readonly rankingService: RankingService,
-        private readonly rankingItemService: RankingItemService,
         private readonly rankingUserService: RankingUserService
     ) {}
 
     @Post('')
     async createRanking(@Body() createRankingDto: CreateRankingDto, @GetUser() userId: string) {
-
         createRankingDto.ownerId = userId;
 
         Logger.log(
@@ -33,43 +29,5 @@ export class RankingController {
             `Getting all rankings for user ${JSON.stringify(userId)}`,
             RankingController.name)
         return await this.rankingUserService.getAllRankingsByUserId(userId);
-    }
-
-    @Post(':rankingId/items')
-    async createRankingItem(@Param('rankingId') rankingId: string, @Body() createRankingItemDto: CreateRankingItemDto, @GetUser() userId: string) {
-        Logger.log('Request', {
-            rankingId,
-            createRankingItemDto,
-            userId
-        })
-
-        Logger.log('Creating ranking item', RankingController.name)
-        createRankingItemDto.createdById = userId;
-        createRankingItemDto.rankingId = rankingId;
-
-        return await this.rankingItemService.createRankingItem(createRankingItemDto);
-    }
-
-    @Get(':rankingId/items')
-    async getRankingItems(@Param('rankingId') rankingId: string, @GetUser() userId: string) {
-        Logger.log('Request', {
-            rankingId,
-            userId
-        })
-
-        Logger.log('Getting ranking items', RankingController.name)
-        return await this.rankingItemService.getRankingItems(rankingId, userId);
-    }
-
-    @Delete(':rankingId/items/:rankingItemId')
-    async deleteRankingItem(@Param('rankingId') rankingId: string, @Param('rankingItemId') rankingItemId: string, @GetUser() userId: string) {
-        Logger.log('Request', {
-            rankingId,
-            rankingItemId,
-            userId
-        })
-
-        Logger.log('Deleting ranking item', RankingController.name)
-        await this.rankingItemService.deleteRankingItem(rankingItemId, userId);
     }
 }
