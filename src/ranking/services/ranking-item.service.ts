@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingValidationsService } from './ranking-validations.service';
 import { RankingItemRepository } from '../repositories/ranking-item.repository';
-import {RankingScoreRepository} from "../repositories/ranking-score.repository";
+import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 
 @Injectable()
 export class RankingItemService {
@@ -49,14 +49,24 @@ export class RankingItemService {
         this.rankingValidationsService.existRankingUser(rankingId, userId),
       ]);
 
-      const rankingItems = await this.rankingItemRepository.getRankingItems(rankingId);
+      const rankingItems =
+        await this.rankingItemRepository.getRankingItems(rankingId);
 
-      return (await Promise.all(rankingItems.map(async rankingItem => {
-        return {
-          ...rankingItem,
-          score: (await this.rankingItemScoreRepository.getAvgRankingItemScore(rankingItem.id)).score || 0,
-        }
-      }))).sort((a, b) => b?.score - a?.score);
+      return (
+        await Promise.all(
+          rankingItems.map(async (rankingItem) => {
+            return {
+              ...rankingItem,
+              score:
+                (
+                  await this.rankingItemScoreRepository.getAvgRankingItemScore(
+                    rankingItem.id,
+                  )
+                ).score || 0,
+            };
+          }),
+        )
+      ).sort((a, b) => b?.score - a?.score);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
