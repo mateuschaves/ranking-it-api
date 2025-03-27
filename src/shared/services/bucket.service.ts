@@ -39,7 +39,7 @@ export class BucketService {
     };
 
     try {
-      return this.s3.upload(params).promise();
+      return await this.s3.upload(params).promise();
     } catch (e) {
       Logger.error(`Error uploading file to S3: ${e}`, BucketService.name);
     }
