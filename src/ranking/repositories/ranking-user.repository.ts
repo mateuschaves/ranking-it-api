@@ -8,7 +8,6 @@ export class RankingUserRepository {
 
   async getAllRankingsByUserId(userId: string) {
     try {
-      console.log('userId', userId);
       return await this.prismaService.ranking.findMany({
         where: {
           userRanking: {
@@ -21,7 +20,7 @@ export class RankingUserRepository {
           id: true,
           name: true,
           description: true,
-          photo: true,
+          banner: true,
           createdAt: true,
         },
       });

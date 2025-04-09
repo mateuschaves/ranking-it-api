@@ -1,73 +1,100 @@
-import {BadRequestException, Injectable } from '@nestjs/common';
-import {RankingRepository} from "../repositories/ranking.repository";
-import {RankingUserRepository} from "../repositories/ranking-user.repository";
-import {UserRepository} from "src/user/repositories/user.repository";
-import {RankingItemRepository} from "../repositories/ranking-item.repository";
-import {RankingScoreRepository} from "../repositories/ranking-score.repository";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { RankingRepository } from '../repositories/ranking.repository';
+import { RankingUserRepository } from '../repositories/ranking-user.repository';
+import { UserRepository } from 'src/user/repositories/user.repository';
+import { RankingItemRepository } from '../repositories/ranking-item.repository';
+import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 
 @Injectable()
 export class RankingValidationsService {
-    constructor(
-        private readonly rankingRepository: RankingRepository,
-        private readonly rankingUserRepository: RankingUserRepository,
-        private readonly rankingItemRepository: RankingItemRepository,
-        private readonly rankingScoreRepository: RankingScoreRepository,
-        private readonly userRepository: UserRepository,
-    ) {}
+  constructor(
+    private readonly rankingRepository: RankingRepository,
+    private readonly rankingUserRepository: RankingUserRepository,
+    private readonly rankingItemRepository: RankingItemRepository,
+    private readonly rankingScoreRepository: RankingScoreRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
-    async existUser(userId: string) {
-        if (!userId) throw new BadRequestException('Você não tem permissão para acessar esse recurso 😳');
+  async existUser(userId: string) {
+    if (!userId)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
 
-        const existUser = await this.userRepository.findOne({
-            id: userId,
-        })
+    const existUser = await this.userRepository.findOne({
+      id: userId,
+    });
 
-        if(!existUser) throw new BadRequestException('Você não tem permissão para acessar esse recurso 😳');
+    if (!existUser)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
 
-        return existUser;
-    }
+    return existUser;
+  }
 
-    async existRanking(id: string) {
-        if (!id) throw new BadRequestException('Ranking não encontrado 😔');
+  async existRanking(id: string) {
+    if (!id) throw new BadRequestException('Ranking não encontrado 😔');
 
-        const existRanking = await this.rankingRepository.getRankingById(id)
+    const existRanking = await this.rankingRepository.getRankingById(id);
 
-        if(!existRanking) throw new BadRequestException('Ranking não encontrado 😔');
+    if (!existRanking)
+      throw new BadRequestException('Ranking não encontrado 😔');
 
-        return existRanking
-    }
+    return existRanking;
+  }
 
-    async existRankingUser(rankingId: string, userId: string) {
-        if (!rankingId || !userId) throw new BadRequestException('Você não tem permissão para acessar esse recurso 😳');
+  async existRankingUser(rankingId: string, userId: string) {
+    if (!rankingId || !userId)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
 
-        const existRankingUser = await this.rankingUserRepository.getRankingUserById(rankingId, userId)
+    const existRankingUser =
+      await this.rankingUserRepository.getRankingUserById(rankingId, userId);
 
-        if(!existRankingUser) throw new BadRequestException('Você não tem permissão para acessar esse recurso 😳');
+    if (!existRankingUser)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
 
-        return existRankingUser
-    }
+    return existRankingUser;
+  }
 
-    async existRankingItem(rankingItemId: string) {
-        if (!rankingItemId) throw new BadRequestException('Item do ranking não encontrado 😔');
+  async existRankingItem(rankingItemId: string) {
+    if (!rankingItemId)
+      throw new BadRequestException('Item do ranking não encontrado 😔');
 
-        const existRankingItem = await this.rankingItemRepository.getRankingItemById(rankingItemId)
+    const existRankingItem =
+      await this.rankingItemRepository.getRankingItemById(rankingItemId);
 
-        if(!existRankingItem) throw new BadRequestException('Item do ranking não encontrado 😔');
+    if (!existRankingItem)
+      throw new BadRequestException('Item do ranking não encontrado 😔');
 
-        return existRankingItem
-    }
+    return existRankingItem;
+  }
 
-    async existRankingItemScore(rankingItemId: string, userId) {
-        if (!rankingItemId || !userId) throw new BadRequestException('Você não tem permissão para acessar esse recurso 😳');
+  async existRankingItemScore(rankingItemId: string, userId) {
+    if (!rankingItemId || !userId)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
 
-        const existRankingItemScore = await this.rankingScoreRepository.getRankingScoreByItemId(rankingItemId);
+    const existRankingItemScore =
+      await this.rankingScoreRepository.getRankingScoreByItemId(rankingItemId);
 
-        const alreadyVoted = existRankingItemScore.some(rankingScore => rankingScore.userId === userId)
+    const alreadyVoted = existRankingItemScore.some(
+      (rankingScore) => rankingScore.userId === userId,
+    );
 
-        if(alreadyVoted) throw new BadRequestException('Você já votou nesse item 😳');
+    if (alreadyVoted)
+      throw new BadRequestException('Você já votou nesse item 😳');
 
-        if(!existRankingItemScore) throw new BadRequestException('Você não tem permissão para acessar esse recurso 😳');
+    if (!existRankingItemScore)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
 
-        return existRankingItemScore
-    }
+    return existRankingItemScore;
+  }
 }
