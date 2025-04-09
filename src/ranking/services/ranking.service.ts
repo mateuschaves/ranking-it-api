@@ -3,6 +3,7 @@ import { RankingRepository } from '../repositories/ranking.repository';
 import CreateRankingDto from '../dto/create-ranking.dto';
 import { RankingValidationsService } from './ranking-validations.service';
 import { BucketService } from 'src/shared/services/bucket.service';
+import UpdateRankingDto from '../dto/update-ranking.dto';
 
 @Injectable()
 export class RankingService {
@@ -12,23 +13,18 @@ export class RankingService {
     private readonly bucketService: BucketService,
   ) {}
 
-  async createRanking(
-    createRankingDto: CreateRankingDto,
-    file: Express.Multer.File,
-  ) {
+  async createRanking(createRankingDto: CreateRankingDto) {
     try {
       Logger.log('Validate exist user', 'RankingService.createRanking');
       const owner = await this.rankingValidationService.existUser(
         createRankingDto.ownerId,
       );
-      const uploadBucketResponse = await this.bucketService.uploadFile(file);
 
       Logger.log('Create ranking', 'RankingService.createRanking');
       return await this.rankingRepository.createRanking({
         name: createRankingDto.name,
         ownerId: owner.id,
         description: createRankingDto.description,
-        photo: uploadBucketResponse?.Key || null,
       });
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -39,7 +35,17 @@ export class RankingService {
     }
   }
 
-  async updateRanking(rankingId: string, data) {
-    return await this.rankingRepository.updateRanking(rankingId, data);
+  async updateRanking(rankingId: string, data: UpdateRankingDto) {
+    try {
+      Logger.log('Validate exist ranking', 'RankingService.updateRanking');
+      await this.rankingValidationService.existRanking(rankingId);
+      await this.rankingRepository.updateRanking(rankingId, data);
+      Logger.log('Ranking updated', 'RankingService.updateRanking');
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erro ao atualizar ranking ☹️');
+    }
   }
 }

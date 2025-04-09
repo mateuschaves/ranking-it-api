@@ -1,12 +1,13 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export default class CreateRankingDto {
+export default class UpdateRankingDto {
   @IsString({
     message: 'Nome inválido 🙈',
   })
   @IsNotEmpty({
     message: 'Nome não pode ser vazio 💁',
   })
+  @IsOptional()
   readonly name: string;
 
   @IsOptional()
@@ -14,6 +15,4 @@ export default class CreateRankingDto {
 
   @IsOptional()
   readonly photo: string;
-
-  ownerId: string;
 }

@@ -37,6 +37,7 @@ export class CdnService {
         Key: key,
         Body: body,
         ContentLength: size,
+        ACL: AclEnum.PUBLIC,
       }),
     );
   }

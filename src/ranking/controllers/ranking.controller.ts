@@ -3,8 +3,9 @@ import {
   Controller,
   Get,
   Logger,
+  Param,
   Post,
-  UploadedFile,
+  Put,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../../user/decorators/get-current-user.decorator';
 import { RankingUserService } from '../services/ranking-user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import UpdateRankingDto from '../dto/update-ranking.dto';
 
 @Controller('rankings')
 @UseGuards(AuthGuard('jwt'))
@@ -28,7 +30,6 @@ export class RankingController {
   async createRanking(
     @Body() createRankingDto: CreateRankingDto,
     @GetUser() userId: string,
-    @UploadedFile() file: Express.Multer.File,
   ) {
     createRankingDto.ownerId = userId;
 
@@ -36,7 +37,7 @@ export class RankingController {
       `Creating ranking for user ${JSON.stringify(userId)}`,
       RankingController.name,
     );
-    return await this.rankingService.createRanking(createRankingDto, file);
+    return await this.rankingService.createRanking(createRankingDto);
   }
 
   @Get('')
@@ -46,5 +47,17 @@ export class RankingController {
       RankingController.name,
     );
     return await this.rankingUserService.getAllRankingsByUserId(userId);
+  }
+
+  @Put(':rankingId')
+  async updateRanking(
+    @Body() updateRankingDto: UpdateRankingDto,
+    @Param('rankingId') rankingId: string,
+  ) {
+    Logger.log(
+      `Updating ranking ${JSON.stringify(updateRankingDto)}`,
+      RankingController.name,
+    );
+    return await this.rankingService.updateRanking(rankingId, updateRankingDto);
   }
 }
