@@ -15,7 +15,6 @@ datasource db {
 
 model User {
   id       String  @id @default(cuid())
-  avatar   String?
   email    String  @unique
   name     String?
   password String
@@ -29,6 +28,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  avatar    File?    @relation(fields: [avatarId], references: [id])
+  avatarId  String?
 }
 
 model Ranking {
@@ -45,6 +46,7 @@ model Ranking {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  files     File[]
 }
 
 model RankingItem {
@@ -115,4 +117,21 @@ model RankingInvite {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model File {
+  id        String    @id @default(uuid())
+  name      String
+  url       String
+  path      String
+  mimetype  String
+  size      Int
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  Ranking   Ranking?  @relation(fields: [RankingId], references: [id])
+  RankingId String?   @map("ranking_id")
+  User      User[]
+
+  @@map("files")
 }
