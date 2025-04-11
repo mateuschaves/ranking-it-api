@@ -7,6 +7,7 @@ import { RankingModule } from './ranking/ranking.module';
 import { FilesModule } from './files/files.module';
 import { AwsSdkModule } from 'nest-aws-sdk';
 import { S3 } from 'aws-sdk';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { S3 } from 'aws-sdk';
     SharedModule,
     RankingModule,
     FilesModule,
+    AiModule,
     AwsSdkModule.forRoot({
       defaultServiceOptions: {
         endpoint: process.env.AWS_S3_ENDPOINT,
