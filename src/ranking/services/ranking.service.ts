@@ -51,7 +51,7 @@ export class RankingService {
     }
   }
 
-  async suggestRankingCriteria(rankingId: string) {
+  async suggestRankingCriteria(rankingId: string, userId: string) {
     try {
       Logger.log(
         'Validate exist ranking',
@@ -59,6 +59,8 @@ export class RankingService {
       );
       const ranking =
         await this.rankingValidationService.existRanking(rankingId);
+
+      await this.rankingValidationService.existRankingUser(rankingId, userId);
 
       const prompt = `Sugira critérios de avaliação para o ranking ${ranking.name}`;
 
