@@ -13,6 +13,7 @@ import { RankingScoreService } from './services/ranking-score.service';
 import { RankingItemController } from './controllers/ranking-item.controller';
 import { RankingScoreController } from './controllers/ranking-score.controller';
 import { BucketService } from 'src/shared/services/bucket.service';
+import { AiModule } from 'src/ai/ai.module';
 
 @Module({
   controllers: [
@@ -33,5 +34,6 @@ import { BucketService } from 'src/shared/services/bucket.service';
     RankingScoreRepository,
     BucketService,
   ],
+  imports: [AiModule],
 })
 export class RankingModule {}

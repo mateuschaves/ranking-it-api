@@ -60,4 +60,16 @@ export class RankingController {
     );
     return await this.rankingService.updateRanking(rankingId, updateRankingDto);
   }
+
+  @Get(':rankingId/suggest-criteria')
+  async suggestRankingCriteria(
+    @Param('rankingId') rankingId: string,
+    @GetUser() userId: string,
+  ) {
+    Logger.log(
+      `Suggesting ranking criteria for ranking ${JSON.stringify(rankingId)}`,
+      RankingController.name,
+    );
+    return await this.rankingService.suggestRankingCriteria(rankingId, userId);
+  }
 }

@@ -41,9 +41,10 @@ model Ranking {
   bannerId    String?
   banner      File?   @relation(fields: [bannerId], references: [id])
 
-  rankingItem   RankingItem[]
-  rankingInvite RankingInvite[]
-  userRanking   UserRanking[]
+  rankingItem     RankingItem[]
+  rankingInvite   RankingInvite[]
+  userRanking     UserRanking[]
+  rankingCriteria RankingCriteria[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -69,6 +70,18 @@ model RankingItem {
   updatedAt   DateTime @updatedAt
 }
 
+model RankingCriteria {
+  id        String @id @default(cuid())
+  rankingId String
+  name      String
+
+  ranking          Ranking            @relation(fields: [rankingId], references: [id])
+  rankingItemScore RankingItemScore[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model RankingItemComment {
   id            String      @id @default(cuid())
   rankingItemId String
@@ -82,13 +95,16 @@ model RankingItemComment {
 }
 
 model RankingItemScore {
-  id            String @id @default(cuid())
-  rankingItemId String
-  userId        String
-  score         Int
+  id                String @id @default(cuid())
+  rankingItemId     String
+  rankingCriteriaId String
 
-  rankingItem RankingItem @relation(fields: [rankingItemId], references: [id])
-  user        User        @relation(fields: [userId], references: [id])
+  userId String
+  score  Int
+
+  rankingItem     RankingItem     @relation(fields: [rankingItemId], references: [id])
+  rankingCriteria RankingCriteria @relation(fields: [rankingCriteriaId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
