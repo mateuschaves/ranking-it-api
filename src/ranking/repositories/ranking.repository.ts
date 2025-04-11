@@ -61,4 +61,52 @@ export class RankingRepository {
       throw error;
     }
   }
+
+  async getRankingCriteria(rankingId: string) {
+    try {
+      return await this.prismaService.rankingCriteria.findMany({
+        where: {
+          rankingId,
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking criteria ${error}`,
+        'RankingRepository.getRankingCriteria',
+      );
+      throw error;
+    }
+  }
+
+  async createRankingCriteria(
+    data: Prisma.RankingCriteriaUncheckedCreateInput,
+  ) {
+    try {
+      return await this.prismaService.rankingCriteria.create({
+        data,
+      });
+    } catch (error) {
+      Logger.error(
+        `Error creating ranking criteria ${error}`,
+        'RankingRepository.createRankingCriteria',
+      );
+      throw error;
+    }
+  }
+
+  async removeRankingCriteria(rankingCriteria: string) {
+    try {
+      return await this.prismaService.rankingCriteria.delete({
+        where: {
+          id: rankingCriteria,
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error removing ranking criteria ${error}`,
+        'RankingRepository.removeRankingCriteria',
+      );
+      throw error;
+    }
+  }
 }

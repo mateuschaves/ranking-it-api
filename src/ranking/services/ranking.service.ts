@@ -79,7 +79,8 @@ export class RankingService {
         throw new BadRequestException('Invalid AI response');
       }
 
-      const criterias = (aiResponse.choices[0].message.content as unknown as string) || '[]';
+      const criterias =
+        (aiResponse.choices[0].message.content as unknown as string) || '[]';
 
       const parsedCriteria = JSON.parse(criterias);
 
@@ -98,6 +99,68 @@ export class RankingService {
         'Error suggesting ranking criteria',
       );
       throw new BadRequestException('Erro ao sugerir critérios ☹️');
+    }
+  }
+
+  async getRankingCriteria(rankingId: string) {
+    try {
+      Logger.log('Validate exist ranking', 'RankingService.getRankingCriteria');
+      await this.rankingValidationService.existRanking(rankingId);
+      return await this.rankingRepository.getRankingCriteria(rankingId);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erro ao buscar critérios do ranking ☹️');
+    }
+  }
+
+  async createRankingCriteria(
+    rankingId: string,
+    criteria: string,
+    userId: string,
+  ) {
+    try {
+      Logger.log(
+        'Validate exist ranking',
+        'RankingService.createRankingCriteria',
+      );
+      await this.rankingValidationService.existRanking(rankingId);
+      await this.rankingValidationService.existRankingUser(rankingId, userId);
+
+      return await this.rankingRepository.createRankingCriteria({
+        name: criteria,
+        rankingId,
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erro ao criar critérios do ranking ☹️');
+    }
+  }
+
+  async removeRankingCriteria(
+    rankingId: string,
+    rankingCriteriaId: string,
+    userId: string,
+  ) {
+    try {
+      Logger.log(
+        'Validate exist ranking',
+        'RankingService.removeRankingCriteria',
+      );
+      await this.rankingValidationService.existRanking(rankingId);
+      await this.rankingValidationService.existRankingUser(rankingId, userId);
+
+      return await this.rankingRepository.removeRankingCriteria(
+        rankingCriteriaId,
+      );
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erro ao remover critérios do ranking ☹️');
     }
   }
 }
