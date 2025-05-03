@@ -19,12 +19,13 @@ model User {
   name     String?
   password String
 
-  ranking            Ranking[]
-  userRanking        UserRanking[]
-  rankingInvite      RankingInvite[]
-  rankingItemComment RankingItemComment[]
-  rankingItem        RankingItem[]
-  rankingItemScore   RankingItemScore[]
+  ranking              Ranking[]
+  userRanking          UserRanking[]
+  rankingInvite        RankingInvite[]
+  rankingItemComment   RankingItemComment[]
+  rankingItem          RankingItem[]
+  rankingItemScore     RankingItemScore[]
+  rankingItemUserPhoto RankingItemUserPhoto[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -56,9 +57,10 @@ model RankingItem {
   createdById   String
   createdByUser User   @relation(fields: [createdById], references: [id])
 
-  ranking            Ranking              @relation(fields: [rankingId], references: [id])
-  rankingItemComment RankingItemComment[]
-  rankingItemScore   RankingItemScore[]
+  ranking              Ranking                @relation(fields: [rankingId], references: [id])
+  rankingItemComment   RankingItemComment[]
+  rankingItemScore     RankingItemScore[]
+  rankingItemUserPhoto RankingItemUserPhoto[]
 
   name        String
   description String?
@@ -110,6 +112,20 @@ model RankingItemScore {
   updatedAt DateTime @updatedAt
 }
 
+model RankingItemUserPhoto {
+  id            String @id @default(cuid())
+  rankingItemId String
+  userId        String
+  photo         File   @relation(fields: [photoId], references: [id])
+  photoId       String
+
+  rankingItem RankingItem @relation(fields: [rankingItemId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model UserRanking {
   id        String @id @default(cuid())
   userId    String
@@ -136,17 +152,18 @@ model RankingInvite {
 }
 
 model File {
-  id        String    @id @default(cuid())
-  name      String
-  url       String
-  path      String
-  mimetype  String
-  size      Int
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-  User      User[]
-  Ranking   Ranking[]
+  id                   String                 @id @default(cuid())
+  name                 String
+  url                  String
+  path                 String
+  mimetype             String
+  size                 Int
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime               @default(now()) @updatedAt @map("updated_at")
+  deletedAt            DateTime?              @map("deleted_at")
+  User                 User[]
+  Ranking              Ranking[]
+  RankingItemUserPhoto RankingItemUserPhoto[]
 
   @@map("files")
 }

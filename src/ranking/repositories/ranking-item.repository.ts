@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/shared/services/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, RankingItemUserPhoto } from '@prisma/client';
+
+interface CreateRankingItemUserPhoto {
+  rankingItemId: string;
+  userId: string;
+  photoId: string;
+}
 
 @Injectable()
 export class RankingItemRepository {
@@ -78,6 +84,32 @@ export class RankingItemRepository {
         'RankingRepository.deleteRankingItem',
       );
       throw error;
+    }
+  }
+
+  async createRankingItemUserPhoto({
+    rankingItemId,
+    userId,
+    photoId,
+  }: CreateRankingItemUserPhoto): Promise<RankingItemUserPhoto> {
+    try {
+      return await this.prismaService.rankingItemUserPhoto.create({
+        data: {
+          rankingItemId,
+          photoId,
+          userId,
+        },
+      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : JSON.stringify(error);
+      Logger.error(
+        `Error creating ranking item user photo: ${message}`,
+        'RankingRepository.createRankingItemUserPhoto',
+      );
+      throw error instanceof Error
+        ? error
+        : new Error('Unknown error creating ranking item user photo');
     }
   }
 }

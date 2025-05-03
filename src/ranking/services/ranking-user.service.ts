@@ -18,9 +18,6 @@ export class RankingUserService {
       return rankings.map((ranking) => {
         return {
           ...ranking,
-          banner: ranking?.banner?.name
-            ? `${process.env.AWS_S3_ENDPOINT}/${ranking?.banner?.name}`
-            : null,
         };
       });
     } catch (error) {
