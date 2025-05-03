@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingValidationsService } from './ranking-validations.service';
 import { RankingItemRepository } from '../repositories/ranking-item.repository';
@@ -24,14 +24,28 @@ export class RankingItemService {
         ),
       ]);
 
-      return await this.rankingItemRepository.createRankingItem({
-        name: createRankingItemDto.name,
-        description: createRankingItemDto.description,
-        photo: createRankingItemDto.photo,
-        link: createRankingItemDto.link,
-        rankingId: createRankingItemDto.rankingId,
-        createdById: createRankingItemDto.createdById,
-      });
+      const rankingItemCreated =
+        await this.rankingItemRepository.createRankingItem({
+          name: createRankingItemDto.name,
+          description: createRankingItemDto.description,
+          link: createRankingItemDto.link,
+          rankingId: createRankingItemDto.rankingId,
+          createdById: createRankingItemDto.createdById,
+        });
+
+      if (Array.isArray(createRankingItemDto.photos)) {
+        await Promise.all(
+          createRankingItemDto.photos.map((photo) =>
+            this.rankingItemRepository.createRankingItemUserPhoto({
+              rankingItemId: rankingItemCreated.id,
+              userId: createRankingItemDto.createdById,
+              photoId: photo,
+            }),
+          ),
+        );
+      }
+
+      return rankingItemCreated;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;

@@ -1,30 +1,33 @@
-import {IsNotEmpty, IsOptional, IsString} from "class-validator";
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export default class CreateRankingItemDto {
-    rankingId: string
+  rankingId: string;
 
-    @IsString({
-        message: 'Nome inválido 🙈'
-    })
-    @IsNotEmpty({
-        message: 'Nome não pode ser vazio 💁'
-    })
-    readonly name: string
+  @IsString({
+    message: 'Nome inválido 🙈',
+  })
+  @IsNotEmpty({
+    message: 'Nome não pode ser vazio 💁',
+  })
+  readonly name: string;
 
-    createdById: string
+  createdById: string;
 
-    @IsOptional()
-    readonly description?: string
+  @IsOptional()
+  readonly description?: string;
 
-    @IsOptional()
-    readonly photo?: string
+  @IsOptional()
+  @IsArray({
+    message: 'As fotos devem ser uma lista de strings',
+  })
+  readonly photos?: string[];
 
-    @IsOptional()
-    readonly link?: string
+  @IsOptional()
+  readonly link?: string;
 
-    @IsOptional()
-    readonly latitude?: string
+  @IsOptional()
+  readonly latitude?: string;
 
-    @IsOptional()
-    readonly longitude?: string
+  @IsOptional()
+  readonly longitude?: string;
 }
