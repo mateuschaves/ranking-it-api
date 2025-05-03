@@ -37,6 +37,18 @@ export class RankingItemRepository {
           createdById: true,
         },
         include: {
+          rankingItemUserPhoto: {
+            select: {
+              id: true,
+              photoId: true,
+              userId: true,
+              photo: {
+                select: {
+                  url: true,
+                },
+              },
+            },
+          },
           createdByUser: {
             select: {
               id: true,
