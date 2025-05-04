@@ -42,6 +42,7 @@ export class RankingItemRepository {
               id: true,
               photoId: true,
               userId: true,
+              createdAt: true,
               photo: {
                 select: {
                   url: true,
