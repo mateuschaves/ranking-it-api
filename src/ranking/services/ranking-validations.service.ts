@@ -103,7 +103,9 @@ export class RankingValidationsService {
       throw new BadRequestException('Critério de ranking não encontrado 😔');
 
     const existRankingCriteria =
-      await this.rankingItemRepository.getRankingItemById(rankingCriteriaId);
+      await this.rankingScoreRepository.getRankingCriteriaById(
+        rankingCriteriaId,
+      );
 
     if (!existRankingCriteria)
       throw new BadRequestException('Critério de ranking não encontrado 😔');
