@@ -74,7 +74,7 @@ export class RankingValidationsService {
     return existRankingItem;
   }
 
-  async existRankingItemScore(rankingItemId: string, userId) {
+  async existRankingItemScore(rankingItemId: string, userId: string) {
     if (!rankingItemId || !userId)
       throw new BadRequestException(
         'Você não tem permissão para acessar esse recurso 😳',
@@ -96,5 +96,18 @@ export class RankingValidationsService {
       );
 
     return existRankingItemScore;
+  }
+
+  async existRankingCriteria(rankingCriteriaId: string) {
+    if (!rankingCriteriaId)
+      throw new BadRequestException('Critério de ranking não encontrado 😔');
+
+    const existRankingCriteria =
+      await this.rankingItemRepository.getRankingItemById(rankingCriteriaId);
+
+    if (!existRankingCriteria)
+      throw new BadRequestException('Critério de ranking não encontrado 😔');
+
+    return existRankingCriteria;
   }
 }
