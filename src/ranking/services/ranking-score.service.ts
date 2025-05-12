@@ -20,6 +20,9 @@ export class RankingScoreService {
           rankingItemId,
           userId,
         ),
+        this.rankingValidationsService.existRankingCriteria(
+          createRankingScoreDto.rankingCriteriaId,
+        ),
       ]);
 
       return await this.rankingScoreRepository.createRankingScore({
