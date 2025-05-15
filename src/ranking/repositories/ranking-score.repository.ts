@@ -45,15 +45,18 @@ export class RankingScoreRepository {
         select: {
           id: true,
           score: true,
-          userId: true,
           rankingItemId: true,
-          createdAt: true,
-          updatedAt: true,
           user: {
             select: {
               id: true,
               name: true,
               avatar: true,
+            },
+          },
+          rankingCriteria: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
