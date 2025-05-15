@@ -16,10 +16,6 @@ export class RankingScoreService {
 
       await Promise.all([
         this.rankingValidationsService.existRankingItem(rankingItemId),
-        this.rankingValidationsService.existRankingItemScore(
-          rankingItemId,
-          userId,
-        ),
         this.rankingValidationsService.existRankingCriteria(
           createRankingScoreDto.rankingCriteriaId,
         ),
