@@ -60,6 +60,11 @@ export class RankingScoreRepository {
             },
           },
         },
+        orderBy: {
+          rankingCriteria: {
+            name: 'asc',
+          },
+        },
       });
     } catch (error) {
       Logger.error(
