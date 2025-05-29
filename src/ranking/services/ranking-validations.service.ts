@@ -98,6 +98,26 @@ export class RankingValidationsService {
     return existRankingItemScore;
   }
 
+  async existRankingItemCriteriaScore(
+    rankingItemId: string,
+    userId: string,
+    rankingCriteriaId: string,
+  ) {
+    if (!rankingItemId || !userId)
+      throw new BadRequestException(
+        'Você não tem permissão para acessar esse recurso 😳',
+      );
+
+    const existRankingItemCriteriaScore =
+      await this.rankingScoreRepository.getRankingScoreCriteriaByUserId(
+        rankingItemId,
+        rankingCriteriaId,
+        userId,
+      );
+
+    return existRankingItemCriteriaScore;
+  }
+
   async existRankingCriteria(rankingCriteriaId: string) {
     if (!rankingCriteriaId)
       throw new BadRequestException('Critério de ranking não encontrado 😔');

@@ -94,6 +94,40 @@ export class RankingScoreRepository {
     }
   }
 
+  async getRankingScoreCriteriaByUserId(
+    rankingItemId: string,
+    rankingCriteriaId: string,
+    userId: string,
+  ) {
+    try {
+      return await this.prismaService.rankingItemScore.findFirst({
+        where: {
+          rankingItemId,
+          userId,
+          rankingCriteriaId,
+        },
+        select: {
+          id: true,
+          score: true,
+          userId: true,
+          rankingItemId: true,
+          rankingCriteria: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking score criteria by user id ${error}`,
+        'RankingRepository.getRankingScoreCriteriaByUserId',
+      );
+      throw error;
+    }
+  }
+
   async updateRankingScore(
     rankingScoreId: string,
     data: Prisma.RankingItemScoreUncheckedUpdateInput,

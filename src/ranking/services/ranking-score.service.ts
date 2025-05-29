@@ -21,12 +21,28 @@ export class RankingScoreService {
         ),
       ]);
 
-      return await this.rankingScoreRepository.createRankingScore({
-        userId,
-        score,
-        rankingItemId,
-        rankingCriteriaId: createRankingScoreDto.rankingCriteriaId,
-      });
+      const existScore =
+        await this.rankingValidationsService.existRankingItemCriteriaScore(
+          rankingItemId,
+          userId,
+          createRankingScoreDto.rankingCriteriaId,
+        );
+
+      if (existScore?.id) {
+        return await this.rankingScoreRepository.updateRankingScore(
+          existScore.id,
+          {
+            score,
+          },
+        );
+      } else {
+        return await this.rankingScoreRepository.createRankingScore({
+          userId,
+          score,
+          rankingItemId,
+          rankingCriteriaId: createRankingScoreDto.rankingCriteriaId,
+        });
+      }
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
