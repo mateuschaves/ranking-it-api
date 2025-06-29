@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
 import SignUpDto from '../dto/SignUpDto';
 import SignInDto from '../dto/SignInDto';
+import { RefreshTokenDto } from '../dto/RefreshTokenDto';
 
 @ApiTags('User Authentication')
 @Controller('user')
@@ -53,5 +54,27 @@ export class UserController {
   })
   async signin(@Body() { email, password }) {
     return this.userService.login(email, password);
+  }
+
+  @Post('/refresh-token')
+  @ApiOperation({ summary: 'Refresh access token using a refresh token' })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens refreshed successfully',
+    schema: {
+      example: {
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        expiresIn: 3600,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid refresh token',
+  })
+  async refreshToken(@Body() { refreshToken }: RefreshTokenDto) {
+    return this.userService.refreshToken(refreshToken);
   }
 }

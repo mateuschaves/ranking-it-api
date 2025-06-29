@@ -35,6 +35,17 @@ export class UserRepository {
     }
   }
 
+  async findByRefreshToken(refreshToken: string) {
+    try {
+      return await this.prismaService.user.findFirst({
+        where: { refreshToken },
+      });
+    } catch (e) {
+      Logger.error('Error in UserRepository.findByRefreshToken', e);
+      throw e;
+    }
+  }
+
   async findMany() {
     try {
       return await this.prismaService.user.findMany();
@@ -52,6 +63,18 @@ export class UserRepository {
       return await this.prismaService.user.update({ where, data });
     } catch (e) {
       Logger.error('Error in UserRepository.update', e);
+      throw e;
+    }
+  }
+
+  async updateById(id: string, data: Prisma.UserUpdateInput) {
+    try {
+      return await this.prismaService.user.update({
+        where: { id },
+        data,
+      });
+    } catch (e) {
+      Logger.error('Error in UserRepository.updateById', e);
       throw e;
     }
   }

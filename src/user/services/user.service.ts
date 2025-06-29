@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UserRepository } from '../repositories/user.repository';
 import { JwtService } from '@nestjs/jwt';
@@ -48,16 +49,17 @@ export class UserService {
         avatarId: createAccountRequest.avatarId,
       });
 
-      Logger.log('generating token', 'UserService.createAccount');
-      const accessToken = await this.jwtService.signAsync(
-        { id: user.id },
-        {
-          expiresIn: jwtConstants.expiresIn,
-          secret: jwtConstants.secret,
-        },
-      );
+      Logger.log('generating tokens', 'UserService.createAccount');
+      const { accessToken, refreshToken } = await this.generateTokens(user.id);
 
-      return { accessToken, expiresIn: jwtConstants.expiresIn };
+      // Save refresh token to database
+      await this.userRepository.updateById(user.id, { refreshToken });
+
+      return { 
+        accessToken, 
+        refreshToken,
+        expiresIn: jwtConstants.expiresIn 
+      };
     } catch (error) {
       Logger.error(error, 'UserService.createAccount');
       if (error instanceof BadRequestException) {
@@ -87,16 +89,17 @@ export class UserService {
         throw new BadRequestException('Senha incorreta 🕵️‍♂️');
       }
 
-      Logger.log('generating token', 'UserService.login');
-      const accessToken = await this.jwtService.signAsync(
-        { id: user.id },
-        {
-          expiresIn: jwtConstants.expiresIn,
-          secret: jwtConstants.secret,
-        },
-      );
+      Logger.log('generating tokens', 'UserService.login');
+      const { accessToken, refreshToken } = await this.generateTokens(user.id);
 
-      return { accessToken, expiresIn: jwtConstants.expiresIn };
+      // Save refresh token to database
+      await this.userRepository.updateById(user.id, { refreshToken });
+
+      return { 
+        accessToken, 
+        refreshToken,
+        expiresIn: jwtConstants.expiresIn 
+      };
     } catch (error) {
       Logger.error(error, 'UserService.login');
       if (error instanceof BadRequestException) {
@@ -106,5 +109,75 @@ export class UserService {
         'Ops! Não foi possível fazer login 🥲',
       );
     }
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      Logger.log('Refreshing token', 'UserService.refreshToken');
+
+      // Verify refresh token
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: jwtConstants.refreshTokenSecret,
+      });
+
+      // Find user by refresh token
+      const user = await this.userRepository.findByRefreshToken(refreshToken);
+
+      if (!user || user.id !== payload.id) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Generate new tokens
+      const { accessToken, refreshToken: newRefreshToken } = await this.generateTokens(user.id);
+
+      // Update refresh token in database
+      await this.userRepository.updateById(user.id, { refreshToken: newRefreshToken });
+
+      return { 
+        accessToken, 
+        refreshToken: newRefreshToken,
+        expiresIn: jwtConstants.expiresIn 
+      };
+    } catch (error) {
+      Logger.error(error, 'UserService.refreshToken');
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  async logout(userId: string) {
+    try {
+      Logger.log(`Logging out user ${userId}`, 'UserService.logout');
+      
+      // Remove refresh token from database
+      await this.userRepository.updateById(userId, { refreshToken: null });
+      
+      return { message: 'Logged out successfully' };
+    } catch (error) {
+      Logger.error(error, 'UserService.logout');
+      throw new InternalServerErrorException('Error during logout');
+    }
+  }
+
+  private async generateTokens(userId: string) {
+    const accessToken = await this.jwtService.signAsync(
+      { id: userId },
+      {
+        expiresIn: jwtConstants.expiresIn,
+        secret: jwtConstants.secret,
+      },
+    );
+
+    const refreshToken = await this.jwtService.signAsync(
+      { id: userId },
+      {
+        expiresIn: jwtConstants.refreshTokenExpiresIn,
+        secret: jwtConstants.refreshTokenSecret,
+      },
+    );
+
+    return { accessToken, refreshToken };
   }
 }
