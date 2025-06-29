@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { RankingService } from '../services/ranking.service';
 import CreateRankingDto from '../dto/create-ranking.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -21,6 +22,8 @@ import UpdateRankingDto from '../dto/update-ranking.dto';
 import CreateRankingCriteriaDto from '../dto/create-ranking-criteria.dto';
 import { CreateRankingInviteDto } from '../dto/create-ranking-invite.dto';
 
+@ApiTags('Rankings')
+@ApiBearerAuth('JWT-auth')
 @Controller('rankings')
 @UseGuards(AuthGuard('jwt'))
 export class RankingController {
@@ -32,6 +35,16 @@ export class RankingController {
 
   @Post('')
   @UseInterceptors(FileInterceptor('photo'))
+  @ApiOperation({ summary: 'Create a new ranking' })
+  @ApiBody({ type: CreateRankingDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Ranking created successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - validation error',
+  })
   async createRanking(
     @Body() createRankingDto: CreateRankingDto,
     @GetUser() userId: string,
@@ -46,6 +59,11 @@ export class RankingController {
   }
 
   @Get('')
+  @ApiOperation({ summary: 'Get all rankings for the authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of rankings retrieved successfully',
+  })
   async getAllRankings(@GetUser() userId: string) {
     Logger.log(
       `Getting all rankings for user ${JSON.stringify(userId)}`,
@@ -55,6 +73,17 @@ export class RankingController {
   }
 
   @Put(':rankingId')
+  @ApiOperation({ summary: 'Update a ranking' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking to update' })
+  @ApiBody({ type: UpdateRankingDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranking updated successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Ranking not found',
+  })
   async updateRanking(
     @Body() updateRankingDto: UpdateRankingDto,
     @Param('rankingId') rankingId: string,
@@ -67,6 +96,17 @@ export class RankingController {
   }
 
   @Post(':rankingId/invite')
+  @ApiOperation({ summary: 'Invite a user to join a ranking' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking to invite to' })
+  @ApiBody({ type: CreateRankingInviteDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Invite sent successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - user already member or invite exists',
+  })
   async inviteUserToRanking(
     @Param('rankingId') rankingId: string,
     @Body() createRankingInviteDto: CreateRankingInviteDto,
@@ -87,6 +127,12 @@ export class RankingController {
   }
 
   @Get(':rankingId/suggest-criteria')
+  @ApiOperation({ summary: 'Get AI-suggested criteria for a ranking' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiResponse({
+    status: 200,
+    description: 'AI suggestions retrieved successfully',
+  })
   async suggestRankingCriteria(
     @Param('rankingId') rankingId: string,
     @GetUser() userId: string,
@@ -99,6 +145,12 @@ export class RankingController {
   }
 
   @Get(':rankingId/criteria')
+  @ApiOperation({ summary: 'Get ranking criteria' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranking criteria retrieved successfully',
+  })
   async getRankingCriteria(@Param('rankingId') rankingId: string) {
     Logger.log(
       `Getting ranking criteria for ranking ${JSON.stringify(rankingId)}`,
@@ -108,6 +160,13 @@ export class RankingController {
   }
 
   @Post(':rankingId/criteria')
+  @ApiOperation({ summary: 'Create ranking criteria' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiBody({ type: CreateRankingCriteriaDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Criteria created successfully',
+  })
   async createRankingCriteria(
     @Param('rankingId') rankingId: string,
     @Body() createRankingCriteriaDto: CreateRankingCriteriaDto,
@@ -125,6 +184,13 @@ export class RankingController {
   }
 
   @Delete(':rankingId/criteria/:criteriaId')
+  @ApiOperation({ summary: 'Remove ranking criteria' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiParam({ name: 'criteriaId', description: 'ID of the criteria to remove' })
+  @ApiResponse({
+    status: 200,
+    description: 'Criteria removed successfully',
+  })
   async removeRankingCriteria(
     @Param('rankingId') rankingId: string,
     @Param('criteriaId') criteriaId: string,

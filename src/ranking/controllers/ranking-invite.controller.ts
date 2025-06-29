@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../../user/decorators/get-current-user.decorator';
 import { RankingInviteService } from '../services/ranking-invite.service';
@@ -15,6 +16,8 @@ import { UserRepository } from '../../user/repositories/user.repository';
 import { CreateRankingInviteDto } from '../dto/create-ranking-invite.dto';
 import { AcceptRankingInviteDto } from '../dto/accept-ranking-invite.dto';
 
+@ApiTags('Ranking Invites')
+@ApiBearerAuth('JWT-auth')
 @Controller('ranking-invites')
 @UseGuards(AuthGuard('jwt'))
 export class RankingInviteController {
@@ -24,6 +27,16 @@ export class RankingInviteController {
   ) {}
 
   @Post('')
+  @ApiOperation({ summary: 'Create a ranking invite' })
+  @ApiBody({ type: CreateRankingInviteDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Invite created successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - user already member or invite exists',
+  })
   async createRankingInvite(
     @Body() createRankingInviteDto: CreateRankingInviteDto,
     @GetUser() userId: string,
@@ -39,6 +52,11 @@ export class RankingInviteController {
   }
 
   @Get('my-invites')
+  @ApiOperation({ summary: 'Get all invites for the authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'User invites retrieved successfully',
+  })
   async getMyRankingInvites(@GetUser() userId: string) {
     Logger.log(
       `Getting ranking invites for user ${userId}`,
@@ -55,6 +73,12 @@ export class RankingInviteController {
   }
 
   @Get('ranking/:rankingId')
+  @ApiOperation({ summary: 'Get all invites for a specific ranking' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranking invites retrieved successfully',
+  })
   async getRankingInvitesByRankingId(
     @Param('rankingId') rankingId: string,
     @GetUser() userId: string,
@@ -70,6 +94,16 @@ export class RankingInviteController {
   }
 
   @Post('accept')
+  @ApiOperation({ summary: 'Accept a ranking invite' })
+  @ApiBody({ type: AcceptRankingInviteDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Invite accepted successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invite not found or user already member',
+  })
   async acceptRankingInvite(
     @Body() acceptRankingInviteDto: AcceptRankingInviteDto,
     @GetUser() userId: string,
@@ -85,6 +119,12 @@ export class RankingInviteController {
   }
 
   @Delete('decline/:inviteId')
+  @ApiOperation({ summary: 'Decline a ranking invite' })
+  @ApiParam({ name: 'inviteId', description: 'ID of the invite to decline' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invite declined successfully',
+  })
   async declineRankingInvite(
     @Param('inviteId') inviteId: string,
     @GetUser() userId: string,
@@ -100,6 +140,12 @@ export class RankingInviteController {
   }
 
   @Delete('cancel/:inviteId')
+  @ApiOperation({ summary: 'Cancel a ranking invite (by sender or ranking member)' })
+  @ApiParam({ name: 'inviteId', description: 'ID of the invite to cancel' })
+  @ApiResponse({
+    status: 200,
+    description: 'Invite canceled successfully',
+  })
   async cancelRankingInvite(
     @Param('inviteId') inviteId: string,
     @GetUser() userId: string,
