@@ -29,9 +29,4 @@ jobs:
         run: npm run build
 
       - name: Run unit tests only
-        run: npm run test:cov # This runs only unit tests in src/**/*.spec.ts
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        run: npm test # This runs only unit tests in src/**/*.spec.ts
