@@ -1,0 +1,61 @@
+name: Update Coverage Badge
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests with coverage
+      run: npm run test:cov
+    
+    - name: Extract coverage percentage
+      id: coverage
+      run: |
+        # Extract coverage from Jest output
+        COVERAGE=$(npm run test:cov 2>&1 | grep -o 'All files.*|' | tail -1 | awk '{print $3}' | sed 's/%//')
+        echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        
+        # Determine color based on coverage
+        if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+          echo "color=brightgreen" >> $GITHUB_OUTPUT
+        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+          echo "color=green" >> $GITHUB_OUTPUT
+        elif (( $(echo "$COVERAGE >= 40" | bc -l) )); then
+          echo "color=yellow" >> $GITHUB_OUTPUT
+        elif (( $(echo "$COVERAGE >= 20" | bc -l) )); then
+          echo "color=orange" >> $GITHUB_OUTPUT
+        else
+          echo "color=red" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Update README with dynamic badge
+      run: |
+        # Create dynamic badge URL
+        BADGE_URL="https://img.shields.io/badge/test%20coverage-${{ steps.coverage.outputs.coverage }}%25-${{ steps.coverage.outputs.color }}"
+        
+        # Update README.md
+        sed -i "s|https://img.shields.io/badge/test%20coverage-[0-9.]*%25-[a-z]*|$BADGE_URL|g" README.md
+        
+        # Commit and push changes
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git commit -m "Update test coverage badge to ${{ steps.coverage.outputs.coverage }}%" || exit 0
+        git push 

@@ -1,5 +1,7 @@
 # Swagger API Documentation
 
+![Test Coverage](https://img.shields.io/badge/test%20coverage-0%25-red)
+
 ## Overview
 
 This API provides comprehensive documentation for the Ranking IT API using Swagger/OpenAPI 3.0. The documentation is automatically generated from the code and provides an interactive interface for testing API endpoints.
