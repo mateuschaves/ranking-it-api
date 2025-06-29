@@ -38,6 +38,7 @@
     "class-validator": "^0.14.1",
     "nest-aws-sdk": "^3.1.0",
     "openai": "^4.93.0",
+    "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "prisma": "^6.6.0",
     "reflect-metadata": "^0.2.2",
