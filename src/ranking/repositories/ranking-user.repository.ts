@@ -32,6 +32,7 @@ export class RankingUserRepository {
       throw error;
     }
   }
+
   async createRankingInvite(data: Prisma.RankingInviteUncheckedCreateInput) {
     try {
       return await this.prismaService.rankingInvite.create({
@@ -45,6 +46,130 @@ export class RankingUserRepository {
       throw error;
     }
   }
+
+  async getRankingInvitesByEmail(email: string) {
+    try {
+      return await this.prismaService.rankingInvite.findMany({
+        where: {
+          email,
+        },
+        include: {
+          ranking: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              banner: true,
+            },
+          },
+          invitedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking invites by email ${error}`,
+        'RankingRepository.getRankingInvitesByEmail',
+      );
+      throw error;
+    }
+  }
+
+  async getRankingInvitesByRankingId(rankingId: string) {
+    try {
+      return await this.prismaService.rankingInvite.findMany({
+        where: {
+          rankingId,
+        },
+        include: {
+          invitedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking invites by ranking id ${error}`,
+        'RankingRepository.getRankingInvitesByRankingId',
+      );
+      throw error;
+    }
+  }
+
+  async getRankingInviteById(inviteId: string) {
+    try {
+      return await this.prismaService.rankingInvite.findUnique({
+        where: {
+          id: inviteId,
+        },
+        include: {
+          ranking: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          invitedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking invite by id ${error}`,
+        'RankingRepository.getRankingInviteById',
+      );
+      throw error;
+    }
+  }
+
+  async deleteRankingInvite(inviteId: string) {
+    try {
+      return await this.prismaService.rankingInvite.delete({
+        where: {
+          id: inviteId,
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error deleting ranking invite ${error}`,
+        'RankingRepository.deleteRankingInvite',
+      );
+      throw error;
+    }
+  }
+
+  async addUserToRanking(userId: string, rankingId: string) {
+    try {
+      return await this.prismaService.userRanking.create({
+        data: {
+          userId,
+          rankingId,
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error adding user to ranking ${error}`,
+        'RankingRepository.addUserToRanking',
+      );
+      throw error;
+    }
+  }
+
   async getRankingUserById(rankingId: string, userId: string) {
     try {
       return await this.prismaService.ranking.findUnique({

@@ -15,9 +15,11 @@ import CreateRankingDto from '../dto/create-ranking.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../../user/decorators/get-current-user.decorator';
 import { RankingUserService } from '../services/ranking-user.service';
+import { RankingInviteService } from '../services/ranking-invite.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import UpdateRankingDto from '../dto/update-ranking.dto';
 import CreateRankingCriteriaDto from '../dto/create-ranking-criteria.dto';
+import { CreateRankingInviteDto } from '../dto/create-ranking-invite.dto';
 
 @Controller('rankings')
 @UseGuards(AuthGuard('jwt'))
@@ -25,6 +27,7 @@ export class RankingController {
   constructor(
     private readonly rankingService: RankingService,
     private readonly rankingUserService: RankingUserService,
+    private readonly rankingInviteService: RankingInviteService,
   ) {}
 
   @Post('')
@@ -61,6 +64,26 @@ export class RankingController {
       RankingController.name,
     );
     return await this.rankingService.updateRanking(rankingId, updateRankingDto);
+  }
+
+  @Post(':rankingId/invite')
+  async inviteUserToRanking(
+    @Param('rankingId') rankingId: string,
+    @Body() createRankingInviteDto: CreateRankingInviteDto,
+    @GetUser() userId: string,
+  ) {
+    Logger.log(
+      `Inviting user to ranking ${rankingId}`,
+      RankingController.name,
+    );
+    
+    // Set the rankingId from the URL parameter
+    createRankingInviteDto.rankingId = rankingId;
+    
+    return await this.rankingInviteService.createRankingInvite(
+      createRankingInviteDto,
+      userId,
+    );
   }
 
   @Get(':rankingId/suggest-criteria')
