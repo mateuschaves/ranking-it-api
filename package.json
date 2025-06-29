@@ -89,7 +89,14 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/$1"
-    }
+      "^src/(.*)$": "<rootDir>/$1",
+      "^passport$": "<rootDir>/../node_modules/passport"
+    },
+    "setupFilesAfterEnv": [
+      "<rootDir>/../jest.setup.js"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@nestjs/passport|passport)/)"
+    ]
   }
 }
