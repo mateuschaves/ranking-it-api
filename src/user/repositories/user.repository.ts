@@ -24,6 +24,17 @@ export class UserRepository {
     }
   }
 
+  async findByEmail(email: string) {
+    try {
+      return await this.prismaService.user.findUnique({
+        where: { email },
+      });
+    } catch (e) {
+      Logger.error('Error in UserRepository.findByEmail', e);
+      throw e;
+    }
+  }
+
   async findMany() {
     try {
       return await this.prismaService.user.findMany();

@@ -12,6 +12,8 @@ import { RankingScoreRepository } from './repositories/ranking-score.repository'
 import { RankingScoreService } from './services/ranking-score.service';
 import { RankingItemController } from './controllers/ranking-item.controller';
 import { RankingScoreController } from './controllers/ranking-score.controller';
+import { RankingInviteService } from './services/ranking-invite.service';
+import { RankingInviteController } from './controllers/ranking-invite.controller';
 import { BucketService } from 'src/shared/services/bucket.service';
 import { AiModule } from 'src/ai/ai.module';
 
@@ -20,6 +22,7 @@ import { AiModule } from 'src/ai/ai.module';
     RankingController,
     RankingItemController,
     RankingScoreController,
+    RankingInviteController,
   ],
   providers: [
     RankingService,
@@ -27,6 +30,7 @@ import { AiModule } from 'src/ai/ai.module';
     RankingValidationsService,
     RankingUserService,
     RankingScoreService,
+    RankingInviteService,
     UserRepository,
     RankingRepository,
     RankingItemRepository,
