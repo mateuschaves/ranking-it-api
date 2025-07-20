@@ -161,6 +161,18 @@ export class UserService {
     }
   }
 
+  async updateAvatar(userId: string, avatarId: string) {
+    try {
+      const user = await this.userRepository.findOne({ id: userId });
+      if (!user) throw new BadRequestException('Usuário não encontrado');
+      await this.userRepository.updateById(userId, { avatarId: { set: avatarId } });
+      return { message: 'Avatar atualizado com sucesso' };
+    } catch (error) {
+      Logger.error(error, 'UserService.updateAvatar');
+      throw new InternalServerErrorException('Erro ao atualizar avatar');
+    }
+  }
+
   private async generateTokens(userId: string) {
     const accessToken = await this.jwtService.signAsync(
       { id: userId },
