@@ -165,7 +165,7 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne({ id: userId });
       if (!user) throw new BadRequestException('Usuário não encontrado');
-      await this.userRepository.updateById(userId, { avatarId: { set: avatarId } });
+      await this.userRepository.updateById(userId, { avatar: { connect: { id: avatarId } } });
       return { message: 'Avatar atualizado com sucesso' };
     } catch (error) {
       Logger.error(error, 'UserService.updateAvatar');
