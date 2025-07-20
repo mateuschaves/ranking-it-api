@@ -15,9 +15,12 @@ export class UserRepository {
     }
   }
 
-  async findOne(where: Prisma.UserWhereUniqueInput) {
+  async findOne(where: Prisma.UserWhereUniqueInput, includeAvatar = false) {
     try {
-      return await this.prismaService.user.findUnique({ where });
+      return await this.prismaService.user.findUnique({
+        where,
+        ...(includeAvatar && { include: { avatar: true } }),
+      });
     } catch (e) {
       Logger.error('Error in UserRepository.findOne', e);
       throw e;
