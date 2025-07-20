@@ -39,5 +39,6 @@ import { AiModule } from 'src/ai/ai.module';
     BucketService,
   ],
   imports: [AiModule],
+  exports: [RankingUserRepository],
 })
 export class RankingModule {}

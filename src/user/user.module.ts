@@ -6,12 +6,14 @@ import {JwtModule, JwtService} from "@nestjs/jwt";
 import {PassportModule} from "@nestjs/passport";
 import {jwtConstants} from "../shared/constants/jwt.constants";
 import {JwtStrategy} from "./strategies/jwt.strategy";
+import { RankingModule } from '../ranking/ranking.module';
 
 @Module({
   controllers: [UserController],
   providers: [UserService, UserRepository, JwtService, JwtStrategy],
   imports: [
       PassportModule,
+      RankingModule,
   ]
 })
 export class UserModule {}

@@ -1,14 +1,22 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Body, Controller, Post, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
 import SignUpDto from '../dto/SignUpDto';
 import SignInDto from '../dto/SignInDto';
 import { RefreshTokenDto } from '../dto/RefreshTokenDto';
+import { JwtAuthGuard } from '../guards/JwtAuth.guard';
+import { GetUser } from '../decorators/get-current-user.decorator';
+import { RankingUserRepository } from '../../ranking/repositories/ranking-user.repository';
+import { UserRepository } from '../repositories/user.repository';
 
 @ApiTags('User Authentication')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly userRepository: UserRepository,
+    private readonly rankingUserRepository: RankingUserRepository,
+  ) {}
 
   @Post('/signup')
   @ApiOperation({ summary: 'Create a new user account' })
@@ -76,5 +84,50 @@ export class UserController {
   })
   async refreshToken(@Body() { refreshToken }: RefreshTokenDto) {
     return this.userService.refreshToken(refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/me/profile')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obter perfil do usuário logado e contagem de convites pendentes' })
+  @ApiResponse({
+    status: 200,
+    description: 'Perfil do usuário logado e contagem de convites pendentes',
+    schema: {
+      example: {
+        id: 'user-123',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        avatarId: 'file-123',
+        createdAt: '2024-07-01T12:00:00.000Z',
+        pendingInvitesCount: 2,
+      },
+      properties: {
+        id: { type: 'string', description: 'ID do usuário' },
+        name: { type: 'string', description: 'Nome do usuário' },
+        email: { type: 'string', description: 'E-mail do usuário' },
+        avatarId: { type: 'string', description: 'ID do avatar (opcional)' },
+        createdAt: { type: 'string', format: 'date-time', description: 'Data de criação' },
+        pendingInvitesCount: { type: 'number', description: 'Quantidade de convites pendentes' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Não autorizado. Token JWT ausente ou inválido.'
+  })
+  async getProfile(@GetUser() userId: string) {
+    const user = await this.userRepository.findOne({ id: userId });
+    if (!user) throw new Error('Usuário não encontrado');
+    const invites = await this.rankingUserRepository.getRankingInvitesByEmail(user.email);
+    // Considera todos como pendentes, pois não há campo status
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarId: user.avatarId,
+      createdAt: user.createdAt,
+      pendingInvitesCount: invites.length,
+    };
   }
 }
