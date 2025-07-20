@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
 import SignUpDto from '../dto/SignUpDto';
@@ -8,6 +8,7 @@ import { JwtAuthGuard } from '../guards/JwtAuth.guard';
 import { GetUser } from '../decorators/get-current-user.decorator';
 import { RankingUserRepository } from '../../ranking/repositories/ranking-user.repository';
 import { UserRepository } from '../repositories/user.repository';
+import { UpdateAvatarDto } from '../dto/UpdateAvatarDto';
 
 @ApiTags('User Authentication')
 @Controller('user')
@@ -129,5 +130,21 @@ export class UserController {
       createdAt: user.createdAt,
       pendingInvitesCount: invites.length,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('/me/avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar avatar do usuário logado' })
+  @ApiBody({ type: UpdateAvatarDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Avatar atualizado com sucesso',
+    schema: { example: { message: 'Avatar atualizado com sucesso' } },
+  })
+  @ApiResponse({ status: 400, description: 'Requisição inválida' })
+  @ApiResponse({ status: 401, description: 'Não autorizado. Token JWT ausente ou inválido.' })
+  async updateAvatar(@GetUser() userId: string, @Body() body: UpdateAvatarDto) {
+    return this.userService.updateAvatar(userId, body.avatarId);
   }
 }
