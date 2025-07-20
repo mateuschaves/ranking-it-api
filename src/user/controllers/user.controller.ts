@@ -100,6 +100,7 @@ export class UserController {
         name: 'John Doe',
         email: 'john.doe@example.com',
         avatarId: 'file-123',
+        avatarUrl: 'https://cdn.com/avatar.jpg',
         createdAt: '2024-07-01T12:00:00.000Z',
         pendingInvitesCount: 2,
       },
@@ -108,6 +109,7 @@ export class UserController {
         name: { type: 'string', description: 'Nome do usuário' },
         email: { type: 'string', description: 'E-mail do usuário' },
         avatarId: { type: 'string', description: 'ID do avatar (opcional)' },
+        avatarUrl: { type: 'string', description: 'URL do avatar (opcional)' },
         createdAt: { type: 'string', format: 'date-time', description: 'Data de criação' },
         pendingInvitesCount: { type: 'number', description: 'Quantidade de convites pendentes' },
       },
@@ -118,15 +120,15 @@ export class UserController {
     description: 'Não autorizado. Token JWT ausente ou inválido.'
   })
   async getProfile(@GetUser() userId: string) {
-    const user = await this.userRepository.findOne({ id: userId });
+    const user = await this.userRepository.findOne({ id: userId }, true) as any;
     if (!user) throw new Error('Usuário não encontrado');
     const invites = await this.rankingUserRepository.getRankingInvitesByEmail(user.email);
-    // Considera todos como pendentes, pois não há campo status
     return {
       id: user.id,
       name: user.name,
       email: user.email,
       avatarId: user.avatarId,
+      avatarUrl: user.avatar?.url || null,
       createdAt: user.createdAt,
       pendingInvitesCount: invites.length,
     };
