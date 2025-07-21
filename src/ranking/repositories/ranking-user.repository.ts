@@ -190,4 +190,19 @@ export class RankingUserRepository {
       throw error;
     }
   }
+
+  async existsUserInRanking(userId: string, rankingId: string) {
+    try {
+      const userRanking = await this.prismaService.userRanking.findFirst({
+        where: { userId, rankingId },
+      });
+      return !!userRanking;
+    } catch (error) {
+      Logger.error(
+        `Error checking if user is in ranking ${error}`,
+        'RankingRepository.existsUserInRanking',
+      );
+      throw error;
+    }
+  }
 }
