@@ -26,6 +26,12 @@ export class UserController {
     status: 201,
     description: 'User account created successfully',
     schema: {
+      properties: {
+        id: { type: 'string', example: 'user-123' },
+        email: { type: 'string', example: 'john.doe@example.com' },
+        name: { type: 'string', example: 'John Doe' },
+        token: { type: 'string', example: 'jwt-token-here' },
+      },
       example: {
         id: 'user-123',
         email: 'john.doe@example.com',
@@ -37,6 +43,7 @@ export class UserController {
   @ApiResponse({
     status: 400,
     description: 'Bad request - validation error',
+    schema: { example: { message: 'Email já cadastrado 🕵️‍♂️' } },
   })
   async signup(@Body() CreateAccountDto: SignUpDto) {
     return this.userService.createAccount(CreateAccountDto);
@@ -49,6 +56,12 @@ export class UserController {
     status: 200,
     description: 'User signed in successfully',
     schema: {
+      properties: {
+        id: { type: 'string', example: 'user-123' },
+        email: { type: 'string', example: 'john.doe@example.com' },
+        name: { type: 'string', example: 'John Doe' },
+        token: { type: 'string', example: 'jwt-token-here' },
+      },
       example: {
         id: 'user-123',
         email: 'john.doe@example.com',
@@ -60,6 +73,7 @@ export class UserController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - invalid credentials',
+    schema: { example: { message: 'Senha incorreta 🕵️‍♂️' } },
   })
   async signin(@Body() { email, password }) {
     return this.userService.login(email, password);
@@ -72,6 +86,11 @@ export class UserController {
     status: 200,
     description: 'Tokens refreshed successfully',
     schema: {
+      properties: {
+        accessToken: { type: 'string', example: 'new-access-token' },
+        refreshToken: { type: 'string', example: 'new-refresh-token' },
+        expiresIn: { type: 'number', example: 3600 },
+      },
       example: {
         accessToken: 'new-access-token',
         refreshToken: 'new-refresh-token',
@@ -82,6 +101,7 @@ export class UserController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized - invalid refresh token',
+    schema: { example: { message: 'Invalid refresh token' } },
   })
   async refreshToken(@Body() { refreshToken }: RefreshTokenDto) {
     return this.userService.refreshToken(refreshToken);
@@ -144,7 +164,7 @@ export class UserController {
     description: 'Avatar atualizado com sucesso',
     schema: { example: { message: 'Avatar atualizado com sucesso' } },
   })
-  @ApiResponse({ status: 400, description: 'Requisição inválida' })
+  @ApiResponse({ status: 400, description: 'Requisição inválida', schema: { example: { message: 'Usuário não encontrado' } } })
   @ApiResponse({ status: 401, description: 'Não autorizado. Token JWT ausente ou inválido.' })
   async updateAvatar(@GetUser() userId: string, @Body() body: UpdateAvatarDto) {
     return this.userService.updateAvatar(userId, body.avatarId);

@@ -32,10 +32,29 @@ export class RankingInviteController {
   @ApiResponse({
     status: 201,
     description: 'Invite created successfully',
+    schema: {
+      properties: {
+        id: { type: 'string', example: 'invite-123' },
+        email: { type: 'string', example: 'john.doe@example.com' },
+        rankingId: { type: 'string', example: 'ranking-123' },
+        invitedById: { type: 'string', example: 'user-123' },
+        createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+        message: { type: 'string', example: 'Invite sent successfully' },
+      },
+      example: {
+        id: 'invite-123',
+        email: 'john.doe@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: '2024-07-01T12:00:00.000Z',
+        message: 'Invite sent successfully',
+      },
+    },
   })
   @ApiResponse({
     status: 400,
     description: 'Bad request - user already member or invite exists',
+    schema: { example: { message: 'User is already a member of this ranking' } },
   })
   async createRankingInvite(
     @Body() createRankingInviteDto: CreateRankingInviteDto,
@@ -56,6 +75,57 @@ export class RankingInviteController {
   @ApiResponse({
     status: 200,
     description: 'User invites retrieved successfully',
+    schema: {
+      properties: {
+        invites: {
+          type: 'array',
+          items: {
+            properties: {
+              id: { type: 'string', example: 'invite-123' },
+              email: { type: 'string', example: 'john.doe@example.com' },
+              rankingId: { type: 'string', example: 'ranking-123' },
+              invitedById: { type: 'string', example: 'user-123' },
+              createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+              invitedBy: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'user-123' },
+                  name: { type: 'string', example: 'João Convidador' },
+                  email: { type: 'string', example: 'convidador@email.com' },
+                  avatar: {
+                    type: 'object',
+                    properties: {
+                      url: { type: 'string', example: 'https://cdn.com/avatar.jpg' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        count: { type: 'number', example: 1 },
+      },
+      example: {
+        invites: [
+          {
+            id: 'invite-123',
+            email: 'john.doe@example.com',
+            rankingId: 'ranking-123',
+            invitedById: 'user-123',
+            createdAt: '2024-07-01T12:00:00.000Z',
+            invitedBy: {
+              id: 'user-123',
+              name: 'João Convidador',
+              email: 'convidador@email.com',
+              avatar: {
+                url: 'https://cdn.com/avatar.jpg',
+              },
+            },
+          },
+        ],
+        count: 1,
+      },
+    },
   })
   async getMyRankingInvites(@GetUser() userId: string) {
     Logger.log(
@@ -78,6 +148,35 @@ export class RankingInviteController {
   @ApiResponse({
     status: 200,
     description: 'Ranking invites retrieved successfully',
+    schema: {
+      properties: {
+        invites: {
+          type: 'array',
+          items: {
+            properties: {
+              id: { type: 'string', example: 'invite-123' },
+              email: { type: 'string', example: 'john.doe@example.com' },
+              rankingId: { type: 'string', example: 'ranking-123' },
+              invitedById: { type: 'string', example: 'user-123' },
+              createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+            },
+          },
+        },
+        count: { type: 'number', example: 1 },
+      },
+      example: {
+        invites: [
+          {
+            id: 'invite-123',
+            email: 'john.doe@example.com',
+            rankingId: 'ranking-123',
+            invitedById: 'user-123',
+            createdAt: '2024-07-01T12:00:00.000Z',
+          },
+        ],
+        count: 1,
+      },
+    },
   })
   async getRankingInvitesByRankingId(
     @Param('rankingId') rankingId: string,

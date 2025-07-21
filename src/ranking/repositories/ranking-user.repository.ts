@@ -67,6 +67,11 @@ export class RankingUserRepository {
               id: true,
               name: true,
               email: true,
+              avatar: {
+                select: {
+                  url: true,
+                },
+              },
             },
           },
         },
