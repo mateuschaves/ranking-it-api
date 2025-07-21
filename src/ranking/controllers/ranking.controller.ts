@@ -40,10 +40,27 @@ export class RankingController {
   @ApiResponse({
     status: 201,
     description: 'Ranking created successfully',
+    schema: {
+      properties: {
+        id: { type: 'string', example: 'ranking-123' },
+        name: { type: 'string', example: 'Ranking XPTO' },
+        description: { type: 'string', example: 'Descrição do ranking' },
+        banner: { type: 'string', example: 'https://cdn.com/banner.jpg' },
+        createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+      },
+      example: {
+        id: 'ranking-123',
+        name: 'Ranking XPTO',
+        description: 'Descrição do ranking',
+        banner: 'https://cdn.com/banner.jpg',
+        createdAt: '2024-07-01T12:00:00.000Z',
+      },
+    },
   })
   @ApiResponse({
     status: 400,
     description: 'Bad request - validation error',
+    schema: { example: { message: 'Erro de validação' } },
   })
   async createRanking(
     @Body() createRankingDto: CreateRankingDto,
@@ -63,6 +80,27 @@ export class RankingController {
   @ApiResponse({
     status: 200,
     description: 'List of rankings retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        properties: {
+          id: { type: 'string', example: 'ranking-123' },
+          name: { type: 'string', example: 'Ranking XPTO' },
+          description: { type: 'string', example: 'Descrição do ranking' },
+          banner: { type: 'string', example: 'https://cdn.com/banner.jpg' },
+          createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+        },
+      },
+      example: [
+        {
+          id: 'ranking-123',
+          name: 'Ranking XPTO',
+          description: 'Descrição do ranking',
+          banner: 'https://cdn.com/banner.jpg',
+          createdAt: '2024-07-01T12:00:00.000Z',
+        },
+      ],
+    },
   })
   async getAllRankings(@GetUser() userId: string) {
     Logger.log(
