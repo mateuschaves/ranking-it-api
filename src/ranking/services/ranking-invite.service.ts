@@ -38,11 +38,11 @@ export class RankingInviteService {
       );
 
       if (existingUser) {
-        const isAlreadyMember = await this.rankingUserRepository.getRankingUserById(
-          createRankingInviteDto.rankingId,
+        // Nova verificação usando existsUserInRanking
+        const isAlreadyMember = await this.rankingUserRepository.existsUserInRanking(
           existingUser.id,
+          createRankingInviteDto.rankingId,
         );
-
         if (isAlreadyMember) {
           throw new BadRequestException(
             'User is already a member of this ranking',
