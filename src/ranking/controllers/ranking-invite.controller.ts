@@ -94,15 +94,24 @@ export class RankingInviteController {
   }
 
   @Post('accept')
-  @ApiOperation({ summary: 'Accept a ranking invite' })
-  @ApiBody({ type: AcceptRankingInviteDto })
+  @ApiOperation({ summary: 'Aceitar convite de ranking' })
+  @ApiBody({
+    type: AcceptRankingInviteDto,
+    examples: {
+      default: {
+        value: { inviteId: 'invite-123' },
+        description: 'ID do convite a ser aceito',
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
-    description: 'Invite accepted successfully',
+    description: 'Convite aceito com sucesso',
+    schema: { example: { message: 'Invite accepted successfully', rankingId: 'ranking-123', rankingName: 'Ranking XPTO' } },
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - invite not found or user already member',
+    description: 'Convite não encontrado, já aceito ou usuário não tem permissão',
   })
   async acceptRankingInvite(
     @Body() acceptRankingInviteDto: AcceptRankingInviteDto,
@@ -119,11 +128,16 @@ export class RankingInviteController {
   }
 
   @Delete('decline/:inviteId')
-  @ApiOperation({ summary: 'Decline a ranking invite' })
-  @ApiParam({ name: 'inviteId', description: 'ID of the invite to decline' })
+  @ApiOperation({ summary: 'Recusar convite de ranking' })
+  @ApiParam({ name: 'inviteId', description: 'ID do convite a ser recusado', example: 'invite-123' })
   @ApiResponse({
     status: 200,
-    description: 'Invite declined successfully',
+    description: 'Convite recusado com sucesso',
+    schema: { example: { message: 'Invite declined successfully' } },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Convite não encontrado, já recusado ou usuário não tem permissão',
   })
   async declineRankingInvite(
     @Param('inviteId') inviteId: string,
