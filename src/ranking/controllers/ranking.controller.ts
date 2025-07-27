@@ -103,6 +103,12 @@ export class RankingController {
               },
             },
           },
+          criteria: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['Qualidade', 'Preço', 'Localização', 'Atendimento'],
+            description: 'Critérios de avaliação do ranking (máximo 4)',
+          },
         },
       },
       example: [
@@ -120,6 +126,7 @@ export class RankingController {
               url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
             },
           },
+          criteria: ['Qualidade', 'Preço', 'Localização', 'Atendimento'],
         },
       ],
     },
