@@ -103,6 +103,15 @@ export class RankingUserRepository {
                   url: true,
                 },
               },
+              rankingCriteria: {
+                select: {
+                  name: true,
+                },
+                take: 4,
+                orderBy: {
+                  createdAt: 'asc',
+                },
+              },
             },
           },
           invitedBy: {
@@ -126,6 +135,7 @@ export class RankingUserRepository {
         ranking: {
           ...invite.ranking,
           banner: invite.ranking.banner ? UrlUtil.getFullUrl(invite.ranking.banner.url) : null,
+          criteria: invite.ranking.rankingCriteria.map(criteria => criteria.name),
         },
         invitedBy: {
           ...invite.invitedBy,

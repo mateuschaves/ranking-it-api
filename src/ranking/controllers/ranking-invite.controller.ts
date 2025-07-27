@@ -86,6 +86,21 @@ export class RankingInviteController {
               rankingId: { type: 'string', example: 'ranking-123' },
               invitedById: { type: 'string', example: 'user-123' },
               createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+              ranking: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'ranking-123' },
+                  name: { type: 'string', example: 'Ranking XPTO' },
+                  description: { type: 'string', example: 'Descrição do ranking' },
+                  banner: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg' },
+                  criteria: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    example: ['Qualidade', 'Preço', 'Localização', 'Atendimento'],
+                    description: 'Critérios de avaliação do ranking (máximo 4)',
+                  },
+                },
+              },
               invitedBy: {
                 type: 'object',
                 properties: {
@@ -113,13 +128,20 @@ export class RankingInviteController {
             rankingId: 'ranking-123',
             invitedById: 'user-123',
             createdAt: '2024-07-01T12:00:00.000Z',
+            ranking: {
+              id: 'ranking-123',
+              name: 'Ranking XPTO',
+              description: 'Descrição do ranking',
+              banner: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg',
+              criteria: ['Qualidade', 'Preço', 'Localização', 'Atendimento'],
+            },
             invitedBy: {
               id: 'user-123',
               name: 'João Convidador',
               email: 'convidador@email.com',
-                          avatar: {
-              url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
-            },
+              avatar: {
+                url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+              },
             },
           },
         ],
