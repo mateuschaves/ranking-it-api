@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { Prisma, RankingItemUserPhoto } from '@prisma/client';
+import { UrlUtil } from 'src/shared/utils/url.util';
 
 interface CreateRankingItemUserPhoto {
   rankingItemId: string;
@@ -28,7 +29,7 @@ export class RankingItemRepository {
 
   async getRankingItems(rankingId: string) {
     try {
-      return await this.prismaService.rankingItem.findMany({
+      const items = await this.prismaService.rankingItem.findMany({
         where: {
           rankingId,
         },
@@ -54,11 +55,32 @@ export class RankingItemRepository {
             select: {
               id: true,
               name: true,
-              avatar: true,
+              avatar: {
+                select: {
+                  url: true,
+                },
+              },
             },
           },
         },
       });
+
+      // Processar URLs completas
+      return items.map(item => ({
+        ...item,
+        createdByUser: {
+          ...item.createdByUser,
+          avatar: {
+            url: UrlUtil.getAvatarUrl(item.createdByUser.avatar),
+          },
+        },
+        rankingItemUserPhoto: item.rankingItemUserPhoto.map(photo => ({
+          ...photo,
+          photo: {
+            url: UrlUtil.getFullUrl(photo.photo.url),
+          },
+        })),
+      }));
     } catch (error) {
       Logger.error(
         `Error fetching ranking items ${error}`,

@@ -1,5 +1,7 @@
 export class UrlUtil {
-  private static readonly CDN_BASE_URL = process.env.CDN_BASE_URL || 'http://ranking-attachments.s3.us-east-1.amazonaws.com';
+  private static getCdnBaseUrl(): string {
+    return process.env.CDN_BASE_URL || 'http://ranking-attachments.s3.us-east-1.amazonaws.com';
+  }
 
   static getFullUrl(fileName: string): string | null {
     if (!fileName) return null;
@@ -12,7 +14,7 @@ export class UrlUtil {
     // Remove barras iniciais se houver
     const cleanFileName = fileName.replace(/^\/+/, '');
     
-    return `${this.CDN_BASE_URL}/${cleanFileName}`;
+    return `${this.getCdnBaseUrl()}/${cleanFileName}`;
   }
 
   static getAvatarUrl(avatar: any): string | null {
