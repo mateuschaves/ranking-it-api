@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from '../services/user.service';
+import { UserRepository } from '../repositories/user.repository';
+import { RankingUserRepository } from '../../ranking/repositories/ranking-user.repository';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -11,6 +13,18 @@ describe('UserController', () => {
       signup: jest.fn(),
       signin: jest.fn(),
       refreshToken: jest.fn(),
+      updateAvatar: jest.fn(),
+    };
+
+    const mockUserRepository = {
+      findOne: jest.fn(),
+      findByEmail: jest.fn(),
+      findByRefreshToken: jest.fn(),
+      updateById: jest.fn(),
+    };
+
+    const mockRankingUserRepository = {
+      getRankingInvitesByEmail: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -19,6 +33,14 @@ describe('UserController', () => {
         {
           provide: UserService,
           useValue: mockUserService,
+        },
+        {
+          provide: UserRepository,
+          useValue: mockUserRepository,
+        },
+        {
+          provide: RankingUserRepository,
+          useValue: mockRankingUserRepository,
         },
       ],
     }).compile();

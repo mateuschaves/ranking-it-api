@@ -95,7 +95,7 @@ export class RankingInviteController {
                   avatar: {
                     type: 'object',
                     properties: {
-                      url: { type: 'string', example: 'https://cdn.com/avatar.jpg' },
+                      url: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg' },
                     },
                   },
                 },
@@ -117,9 +117,9 @@ export class RankingInviteController {
               id: 'user-123',
               name: 'João Convidador',
               email: 'convidador@email.com',
-              avatar: {
-                url: 'https://cdn.com/avatar.jpg',
-              },
+                          avatar: {
+              url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+            },
             },
           },
         ],

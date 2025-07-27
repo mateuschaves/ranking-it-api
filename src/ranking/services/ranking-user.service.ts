@@ -18,6 +18,7 @@ export class RankingUserService {
       return rankings.map((ranking) => {
         return {
           ...ranking,
+          createdBy: ranking.owner,
         };
       });
     } catch (error) {

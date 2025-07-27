@@ -87,8 +87,22 @@ export class RankingController {
           id: { type: 'string', example: 'ranking-123' },
           name: { type: 'string', example: 'Ranking XPTO' },
           description: { type: 'string', example: 'Descrição do ranking' },
-          banner: { type: 'string', example: 'https://cdn.com/banner.jpg' },
+          banner: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg' },
           createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+          createdBy: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'user-123' },
+              name: { type: 'string', example: 'John Doe' },
+              email: { type: 'string', example: 'john.doe@example.com' },
+              avatar: {
+                type: 'object',
+                properties: {
+                  url: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg' },
+                },
+              },
+            },
+          },
         },
       },
       example: [
@@ -96,8 +110,16 @@ export class RankingController {
           id: 'ranking-123',
           name: 'Ranking XPTO',
           description: 'Descrição do ranking',
-          banner: 'https://cdn.com/banner.jpg',
+          banner: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg',
           createdAt: '2024-07-01T12:00:00.000Z',
+          createdBy: {
+            id: 'user-123',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            avatar: {
+              url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+            },
+          },
         },
       ],
     },
