@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { Prisma } from '@prisma/client';
+import { UrlUtil } from 'src/shared/utils/url.util';
 
 @Injectable()
 export class RankingScoreRepository {
@@ -38,7 +39,7 @@ export class RankingScoreRepository {
 
   async getRankingScores(rankingItemId: string) {
     try {
-      return await this.prismaService.rankingItemScore.findMany({
+      const scores = await this.prismaService.rankingItemScore.findMany({
         where: {
           rankingItemId,
         },
@@ -50,7 +51,11 @@ export class RankingScoreRepository {
             select: {
               id: true,
               name: true,
-              avatar: true,
+              avatar: {
+                select: {
+                  url: true,
+                },
+              },
             },
           },
           rankingCriteria: {
@@ -66,6 +71,17 @@ export class RankingScoreRepository {
           },
         },
       });
+
+      // Processar URLs completas
+      return scores.map(score => ({
+        ...score,
+        user: {
+          ...score.user,
+          avatar: {
+            url: UrlUtil.getAvatarUrl(score.user.avatar),
+          },
+        },
+      }));
     } catch (error) {
       Logger.error(
         `Error fetching ranking scores ${error}`,
