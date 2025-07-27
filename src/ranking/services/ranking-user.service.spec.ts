@@ -57,11 +57,35 @@ describe('RankingUserService', () => {
               url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
             },
           },
+          rankingCriteria: [
+            { name: 'Qualidade' },
+            { name: 'Preço' },
+            { name: 'Localização' },
+            { name: 'Atendimento' },
+          ],
         },
       ];
 
       (rankingValidationService.existUser as jest.Mock).mockResolvedValue({ id: 'user-123' });
-      (rankingUserRepository.getAllRankingsByUserId as jest.Mock).mockResolvedValue(mockRankings);
+      // Mock do repositório retornando dados já processados (como o repositório real faz)
+      (rankingUserRepository.getAllRankingsByUserId as jest.Mock).mockResolvedValue([
+        {
+          id: 'ranking-123',
+          name: 'Ranking XPTO',
+          description: 'Descrição do ranking',
+          banner: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg',
+          createdAt: new Date('2024-07-01T12:00:00.000Z'),
+          owner: {
+            id: 'user-123',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            avatar: {
+              url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+            },
+          },
+          criteria: ['Qualidade', 'Preço', 'Localização', 'Atendimento'],
+        },
+      ]);
 
       const result = await service.getAllRankingsByUserId('user-123');
 
@@ -88,6 +112,7 @@ describe('RankingUserService', () => {
               url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
             },
           },
+          criteria: ['Qualidade', 'Preço', 'Localização', 'Atendimento'],
         },
       ]);
     });

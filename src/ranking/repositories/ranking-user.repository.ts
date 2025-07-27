@@ -39,6 +39,15 @@ export class RankingUserRepository {
               },
             },
           },
+          rankingCriteria: {
+            select: {
+              name: true,
+            },
+            take: 4,
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
         },
       });
 
@@ -52,6 +61,7 @@ export class RankingUserRepository {
             url: UrlUtil.getAvatarUrl(ranking.owner.avatar),
           },
         },
+        criteria: ranking.rankingCriteria.map(criteria => criteria.name),
       }));
     } catch (error) {
       Logger.error(
