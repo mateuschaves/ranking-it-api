@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { Prisma } from '@prisma/client';
+import { UrlUtil } from 'src/shared/utils/url.util';
 
 @Injectable()
 export class RankingUserRepository {
@@ -8,7 +9,7 @@ export class RankingUserRepository {
 
   async getAllRankingsByUserId(userId: string) {
     try {
-      return await this.prismaService.ranking.findMany({
+      const rankings = await this.prismaService.ranking.findMany({
         where: {
           userRanking: {
             some: {
@@ -20,10 +21,38 @@ export class RankingUserRepository {
           id: true,
           name: true,
           description: true,
-          banner: true,
+          banner: {
+            select: {
+              url: true,
+            },
+          },
           createdAt: true,
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: {
+                select: {
+                  url: true,
+                },
+              },
+            },
+          },
         },
       });
+
+      // Processar URLs completas
+      return rankings.map(ranking => ({
+        ...ranking,
+        banner: ranking.banner ? UrlUtil.getFullUrl(ranking.banner.url) : null,
+        owner: {
+          ...ranking.owner,
+          avatar: {
+            url: UrlUtil.getAvatarUrl(ranking.owner.avatar),
+          },
+        },
+      }));
     } catch (error) {
       Logger.error(
         `Error fetching all rankings by user id ${error}`,
@@ -49,7 +78,7 @@ export class RankingUserRepository {
 
   async getRankingInvitesByEmail(email: string) {
     try {
-      return await this.prismaService.rankingInvite.findMany({
+      const invites = await this.prismaService.rankingInvite.findMany({
         where: {
           email,
         },
@@ -59,7 +88,11 @@ export class RankingUserRepository {
               id: true,
               name: true,
               description: true,
-              banner: true,
+              banner: {
+                select: {
+                  url: true,
+                },
+              },
             },
           },
           invitedBy: {
@@ -76,6 +109,21 @@ export class RankingUserRepository {
           },
         },
       });
+
+      // Processar URLs completas
+      return invites.map(invite => ({
+        ...invite,
+        ranking: {
+          ...invite.ranking,
+          banner: invite.ranking.banner ? UrlUtil.getFullUrl(invite.ranking.banner.url) : null,
+        },
+        invitedBy: {
+          ...invite.invitedBy,
+          avatar: {
+            url: UrlUtil.getAvatarUrl(invite.invitedBy.avatar),
+          },
+        },
+      }));
     } catch (error) {
       Logger.error(
         `Error fetching ranking invites by email ${error}`,

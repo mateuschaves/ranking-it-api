@@ -9,6 +9,7 @@ import { GetUser } from '../decorators/get-current-user.decorator';
 import { RankingUserRepository } from '../../ranking/repositories/ranking-user.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { UpdateAvatarDto } from '../dto/UpdateAvatarDto';
+import { UrlUtil } from '../../shared/utils/url.util';
 
 @ApiTags('User Authentication')
 @Controller('user')
@@ -120,7 +121,7 @@ export class UserController {
         name: 'John Doe',
         email: 'john.doe@example.com',
         avatarId: 'file-123',
-        avatarUrl: 'https://cdn.com/avatar.jpg',
+        avatarUrl: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
         createdAt: '2024-07-01T12:00:00.000Z',
         pendingInvitesCount: 2,
       },
@@ -148,7 +149,7 @@ export class UserController {
       name: user.name,
       email: user.email,
       avatarId: user.avatarId,
-      avatarUrl: user.avatar?.url || null,
+      avatarUrl: user.avatar?.url ? UrlUtil.getFullUrl(user.avatar.url) : null,
       createdAt: user.createdAt,
       pendingInvitesCount: invites.length,
     };
