@@ -6,12 +6,14 @@ import { UserRepository } from '../../user/repositories/user.repository';
 import { RankingValidationsService } from './ranking-validations.service';
 import { CreateRankingInviteDto } from '../dto/create-ranking-invite.dto';
 import { AcceptRankingInviteDto } from '../dto/accept-ranking-invite.dto';
+import { ExpoPushService } from '../../shared/services/expo-push.service';
 
 describe('RankingInviteService', () => {
   let service: RankingInviteService;
   let rankingUserRepository: jest.Mocked<RankingUserRepository>;
   let userRepository: jest.Mocked<UserRepository>;
   let rankingValidationService: jest.Mocked<RankingValidationsService>;
+  let expoPushService: jest.Mocked<ExpoPushService>;
 
   beforeEach(async () => {
     const mockRankingUserRepository = {
@@ -22,6 +24,7 @@ describe('RankingInviteService', () => {
       deleteRankingInvite: jest.fn(),
       addUserToRanking: jest.fn(),
       getRankingUserById: jest.fn(),
+      existsUserInRanking: jest.fn(),
     };
 
     const mockUserRepository = {
@@ -32,6 +35,10 @@ describe('RankingInviteService', () => {
     const mockRankingValidationService = {
       existRanking: jest.fn(),
       existRankingUser: jest.fn(),
+    };
+
+    const mockExpoPushService = {
+      sendPushNotification: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -49,6 +56,10 @@ describe('RankingInviteService', () => {
           provide: RankingValidationsService,
           useValue: mockRankingValidationService,
         },
+        {
+          provide: ExpoPushService,
+          useValue: mockExpoPushService,
+        },
       ],
     }).compile();
 
@@ -56,6 +67,7 @@ describe('RankingInviteService', () => {
     rankingUserRepository = module.get(RankingUserRepository);
     userRepository = module.get(UserRepository);
     rankingValidationService = module.get(RankingValidationsService);
+    expoPushService = module.get(ExpoPushService);
   });
 
   it('should be defined', () => {
@@ -132,6 +144,154 @@ describe('RankingInviteService', () => {
       await expect(
         service.createRankingInvite(createRankingInviteDto, invitedById),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should send push notification when user exists and has push token', async () => {
+      const mockInvite = {
+        id: 'invite-123',
+        email: 'test@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const existingUser = {
+        id: 'existing-user-123',
+        email: 'test@example.com',
+        pushToken: 'ExponentPushToken[test-token]',
+      };
+
+      const mockRanking = {
+        id: 'ranking-123',
+        name: 'Test Ranking',
+      };
+
+      const mockInviter = {
+        id: 'user-123',
+        name: 'John Doe',
+      };
+
+      rankingValidationService.existRanking.mockResolvedValue(mockRanking as any);
+      rankingValidationService.existRankingUser.mockResolvedValue({} as any);
+      userRepository.findByEmail.mockResolvedValue(existingUser as any);
+      rankingUserRepository.existsUserInRanking.mockResolvedValue(false);
+      rankingUserRepository.getRankingInvitesByEmail.mockResolvedValue([]);
+      rankingUserRepository.createRankingInvite.mockResolvedValue(mockInvite);
+      userRepository.findOne.mockResolvedValue(mockInviter as any);
+      expoPushService.sendPushNotification.mockResolvedValue(undefined);
+
+      const result = await service.createRankingInvite(
+        createRankingInviteDto,
+        invitedById,
+      );
+
+      expect(result).toEqual({
+        id: 'invite-123',
+        email: 'test@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: mockInvite.createdAt,
+        message: 'Invite sent successfully',
+      });
+
+      expect(expoPushService.sendPushNotification).toHaveBeenCalledWith(
+        'ExponentPushToken[test-token]',
+        'New Ranking Invitation! 🎯',
+        'John Doe invited you to join "Test Ranking"',
+      );
+    });
+
+    it('should not send push notification when user has no push token', async () => {
+      const mockInvite = {
+        id: 'invite-123',
+        email: 'test@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const existingUser = {
+        id: 'existing-user-123',
+        email: 'test@example.com',
+        pushToken: null,
+      };
+
+      rankingValidationService.existRanking.mockResolvedValue({} as any);
+      rankingValidationService.existRankingUser.mockResolvedValue({} as any);
+      userRepository.findByEmail.mockResolvedValue(existingUser as any);
+      rankingUserRepository.existsUserInRanking.mockResolvedValue(false);
+      rankingUserRepository.getRankingInvitesByEmail.mockResolvedValue([]);
+      rankingUserRepository.createRankingInvite.mockResolvedValue(mockInvite);
+
+      const result = await service.createRankingInvite(
+        createRankingInviteDto,
+        invitedById,
+      );
+
+      expect(result).toEqual({
+        id: 'invite-123',
+        email: 'test@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: mockInvite.createdAt,
+        message: 'Invite sent successfully',
+      });
+
+      expect(expoPushService.sendPushNotification).not.toHaveBeenCalled();
+    });
+
+    it('should not fail invite creation if push notification fails', async () => {
+      const mockInvite = {
+        id: 'invite-123',
+        email: 'test@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const existingUser = {
+        id: 'existing-user-123',
+        email: 'test@example.com',
+        pushToken: 'ExponentPushToken[test-token]',
+      };
+
+      const mockRanking = {
+        id: 'ranking-123',
+        name: 'Test Ranking',
+      };
+
+      const mockInviter = {
+        id: 'user-123',
+        name: 'John Doe',
+      };
+
+      rankingValidationService.existRanking.mockResolvedValue(mockRanking as any);
+      rankingValidationService.existRankingUser.mockResolvedValue({} as any);
+      userRepository.findByEmail.mockResolvedValue(existingUser as any);
+      rankingUserRepository.existsUserInRanking.mockResolvedValue(false);
+      rankingUserRepository.getRankingInvitesByEmail.mockResolvedValue([]);
+      rankingUserRepository.createRankingInvite.mockResolvedValue(mockInvite);
+      userRepository.findOne.mockResolvedValue(mockInviter as any);
+      expoPushService.sendPushNotification.mockRejectedValue(new Error('Push notification failed'));
+
+      const result = await service.createRankingInvite(
+        createRankingInviteDto,
+        invitedById,
+      );
+
+      expect(result).toEqual({
+        id: 'invite-123',
+        email: 'test@example.com',
+        rankingId: 'ranking-123',
+        invitedById: 'user-123',
+        createdAt: mockInvite.createdAt,
+        message: 'Invite sent successfully',
+      });
+
+      expect(expoPushService.sendPushNotification).toHaveBeenCalled();
     });
   });
 
