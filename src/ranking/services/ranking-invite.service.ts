@@ -4,6 +4,7 @@ import { UserRepository } from '../../user/repositories/user.repository';
 import { RankingValidationsService } from './ranking-validations.service';
 import { CreateRankingInviteDto } from '../dto/create-ranking-invite.dto';
 import { AcceptRankingInviteDto } from '../dto/accept-ranking-invite.dto';
+import { ExpoPushService } from '../../shared/services/expo-push.service';
 
 @Injectable()
 export class RankingInviteService {
@@ -11,6 +12,7 @@ export class RankingInviteService {
     private readonly rankingUserRepository: RankingUserRepository,
     private readonly userRepository: UserRepository,
     private readonly rankingValidationService: RankingValidationsService,
+    private readonly expoPushService: ExpoPushService,
   ) {}
 
   async createRankingInvite(
@@ -76,6 +78,39 @@ export class RankingInviteService {
         `Ranking invite created successfully: ${invite.id}`,
         'RankingInviteService.createRankingInvite',
       );
+
+      // Send push notification if user exists and has a push token
+      if (existingUser && existingUser.pushToken) {
+        try {
+          // Get ranking details for the notification (we already validated it exists)
+          const ranking = await this.rankingValidationService.existRanking(
+            createRankingInviteDto.rankingId,
+          );
+          
+          // Get inviter details
+          const inviter = await this.userRepository.findOne({ id: invitedById });
+          
+          const title = 'New Ranking Invitation! 🎯';
+          const body = `${inviter?.name || 'Someone'} invited you to join "${ranking.name}"`;
+          
+          await this.expoPushService.sendPushNotification(
+            existingUser.pushToken,
+            title,
+            body,
+          );
+          
+          Logger.log(
+            `Push notification sent to user ${existingUser.id} for ranking invite`,
+            'RankingInviteService.createRankingInvite',
+          );
+        } catch (pushError) {
+          // Don't fail the invite creation if push notification fails
+          Logger.error(
+            `Failed to send push notification for invite ${invite.id}: ${pushError}`,
+            'RankingInviteService.createRankingInvite',
+          );
+        }
+      }
 
       return {
         id: invite.id,

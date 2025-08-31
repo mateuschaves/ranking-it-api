@@ -9,6 +9,7 @@ import { GetUser } from '../decorators/get-current-user.decorator';
 import { RankingUserRepository } from '../../ranking/repositories/ranking-user.repository';
 import { UserRepository } from '../repositories/user.repository';
 import { UpdateAvatarDto } from '../dto/UpdateAvatarDto';
+import { UpdatePushTokenDto } from '../dto/UpdatePushTokenDto';
 import { UrlUtil } from '../../shared/utils/url.util';
 
 @ApiTags('User Authentication')
@@ -169,5 +170,34 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Não autorizado. Token JWT ausente ou inválido.' })
   async updateAvatar(@GetUser() userId: string, @Body() body: UpdateAvatarDto) {
     return this.userService.updateAvatar(userId, body.avatarId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/push-token')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar push token do usuário logado' })
+  @ApiBody({ type: UpdatePushTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Push token atualizado com sucesso',
+    schema: { 
+      example: { 
+        success: true, 
+        message: 'Push token atualizado com sucesso' 
+      },
+      properties: {
+        success: { type: 'boolean', description: 'Indica se a operação foi bem-sucedida' },
+        message: { type: 'string', description: 'Mensagem de confirmação' }
+      }
+    },
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Requisição inválida', 
+    schema: { example: { message: 'Usuário não encontrado' } } 
+  })
+  @ApiResponse({ status: 401, description: 'Não autorizado. Token JWT ausente ou inválido.' })
+  async updatePushToken(@GetUser() userId: string, @Body() body: UpdatePushTokenDto) {
+    return this.userService.updatePushToken(userId, body.pushToken);
   }
 }

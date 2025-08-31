@@ -173,6 +173,29 @@ export class UserService {
     }
   }
 
+  async updatePushToken(userId: string, pushToken: string) {
+    try {
+      Logger.log(`Updating push token for user ${userId}`, 'UserService.updatePushToken');
+      
+      const user = await this.userRepository.findOne({ id: userId });
+      if (!user) throw new BadRequestException('Usuário não encontrado');
+      
+      await this.userRepository.updateById(userId, { pushToken });
+      
+      Logger.log(`Push token updated successfully for user ${userId}`, 'UserService.updatePushToken');
+      return { 
+        success: true, 
+        message: 'Push token atualizado com sucesso' 
+      };
+    } catch (error) {
+      Logger.error(error, 'UserService.updatePushToken');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Erro ao atualizar push token');
+    }
+  }
+
   private async generateTokens(userId: string) {
     const accessToken = await this.jwtService.signAsync(
       { id: userId },

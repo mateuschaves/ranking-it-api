@@ -14,6 +14,7 @@ describe('UserController', () => {
       signin: jest.fn(),
       refreshToken: jest.fn(),
       updateAvatar: jest.fn(),
+      updatePushToken: jest.fn(),
     };
 
     const mockUserRepository = {
@@ -70,6 +71,25 @@ describe('UserController', () => {
       (userService.refreshToken as jest.Mock).mockRejectedValue(new Error('Invalid refresh token'));
       await expect(controller.refreshToken({ refreshToken: 'invalid-token' })).rejects.toThrow('Invalid refresh token');
       expect(userService.refreshToken).toHaveBeenCalledWith('invalid-token');
+    });
+  });
+
+  describe('updatePushToken', () => {
+    it('should update push token successfully', async () => {
+      const mockResponse = {
+        success: true,
+        message: 'Push token atualizado com sucesso',
+      };
+      (userService.updatePushToken as jest.Mock).mockResolvedValue(mockResponse);
+      const result = await controller.updatePushToken('user-123', { pushToken: 'ExponentPushToken[test]' });
+      expect(result).toEqual(mockResponse);
+      expect(userService.updatePushToken).toHaveBeenCalledWith('user-123', 'ExponentPushToken[test]');
+    });
+
+    it('should throw error when user not found', async () => {
+      (userService.updatePushToken as jest.Mock).mockRejectedValue(new Error('Usuário não encontrado'));
+      await expect(controller.updatePushToken('invalid-user', { pushToken: 'ExponentPushToken[test]' })).rejects.toThrow('Usuário não encontrado');
+      expect(userService.updatePushToken).toHaveBeenCalledWith('invalid-user', 'ExponentPushToken[test]');
     });
   });
 });
