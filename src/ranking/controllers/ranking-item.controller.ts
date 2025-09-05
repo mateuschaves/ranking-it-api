@@ -5,6 +5,7 @@ import {
   Get,
   Logger,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } 
 import { GetUser } from '../../user/decorators/get-current-user.decorator';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingItemService } from '../services/ranking-item.service';
+import UpdateRankingItemDto from '../dto/update-ranking-item.dto';
 
 @ApiTags('Ranking Items')
 @ApiBearerAuth('JWT-auth')
@@ -229,5 +231,71 @@ export class RankingItemController {
 
     Logger.log('Deleting ranking item', RankingItemController.name);
     await this.rankingItemService.deleteRankingItem(rankingItemId, userId);
+  }
+
+  @Patch(':rankingId/items/:rankingItemId')
+  @ApiOperation({ summary: 'Update a ranking item' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiParam({ name: 'rankingItemId', description: 'ID of the item to update' })
+  @ApiBody({
+    description: 'Fields to update in a ranking item',
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Novo nome do item' },
+        description: { type: 'string', example: 'Nova descrição' },
+        photos: {
+          type: 'array',
+          items: { type: 'string', example: 'file-id-123' },
+          description: 'Lista de IDs de fotos (opcional)',
+        },
+        link: { type: 'string', example: 'https://example.com' },
+        latitude: { type: 'string', example: '-23.5505' },
+        longitude: { type: 'string', example: '-46.6333' },
+      },
+      example: {
+        name: 'Novo nome do item',
+        description: 'Nova descrição',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Item updated successfully',
+    schema: {
+      properties: {
+        id: { type: 'string', example: 'item-123' },
+        name: { type: 'string', example: 'Novo nome do item' },
+        description: { type: 'string', example: 'Nova descrição' },
+        link: { type: 'string', example: 'https://example.com' },
+        latitude: { type: 'number', example: -23.5505 },
+        longitude: { type: 'number', example: -46.6333 },
+        rankingId: { type: 'string', example: 'ranking-123' },
+        createdById: { type: 'string', example: 'user-123' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  async updateRankingItem(
+    @Param('rankingId') rankingId: string,
+    @Param('rankingItemId') rankingItemId: string,
+    @Body() updateDto: UpdateRankingItemDto,
+    @GetUser() userId: string,
+  ) {
+    Logger.log('Request', {
+      rankingId,
+      rankingItemId,
+      updateDto,
+      userId,
+    });
+
+    Logger.log('Updating ranking item', RankingItemController.name);
+    return await this.rankingItemService.updateRankingItem(
+      rankingId,
+      rankingItemId,
+      userId,
+      updateDto,
+    );
   }
 }

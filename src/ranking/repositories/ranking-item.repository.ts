@@ -147,4 +147,22 @@ export class RankingItemRepository {
         : new Error('Unknown error creating ranking item user photo');
     }
   }
+
+  async updateRankingItem(
+    rankingItemId: string,
+    data: Partial<Pick<Prisma.RankingItemUncheckedUpdateInput, 'name' | 'description' | 'link' | 'latitude' | 'longitude'>>,
+  ) {
+    try {
+      return await this.prismaService.rankingItem.update({
+        where: { id: rankingItemId },
+        data,
+      });
+    } catch (error) {
+      Logger.error(
+        `Error updating ranking item ${error}`,
+        'RankingRepository.updateRankingItem',
+      );
+      throw error;
+    }
+  }
 }
