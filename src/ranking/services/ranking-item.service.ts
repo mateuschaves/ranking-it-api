@@ -165,6 +165,37 @@ export class RankingItemService {
         },
       );
 
+      if (Array.isArray(updateDto.photos)) {
+        const existingPhotoIds = await this.rankingItemRepository.getRankingItemUserPhotosByUser(
+          rankingItemId,
+          userId,
+        );
+
+        const requestedPhotoIds = updateDto.photos as string[];
+        const newPhotoIds = requestedPhotoIds.filter((photoId) => !existingPhotoIds.includes(photoId));
+        const removedPhotoIds = existingPhotoIds.filter((photoId) => !requestedPhotoIds.includes(photoId));
+
+        if (newPhotoIds.length > 0) {
+          await Promise.all(
+            newPhotoIds.map((photo) =>
+              this.rankingItemRepository.createRankingItemUserPhoto({
+                rankingItemId,
+                userId,
+                photoId: photo,
+              }),
+            ),
+          );
+        }
+
+        if (removedPhotoIds.length > 0) {
+          await this.rankingItemRepository.deleteRankingItemUserPhotos(
+            rankingItemId,
+            userId,
+            removedPhotoIds,
+          );
+        }
+      }
+
       return updated;
     } catch (error) {
       if (error instanceof BadRequestException) {

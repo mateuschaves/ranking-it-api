@@ -21,6 +21,9 @@ describe('RankingItemService', () => {
     getRankingItemById: jest.fn(),
     deleteRankingItem: jest.fn(),
     createRankingItemUserPhoto: jest.fn(),
+    updateRankingItem: jest.fn(),
+    getRankingItemUserPhotosByUser: jest.fn(),
+    deleteRankingItemUserPhotos: jest.fn(),
   };
 
   const mockRankingScoreRepository = {
@@ -268,6 +271,75 @@ describe('RankingItemService', () => {
       mockRankingItemRepository.getRankingItemById.mockResolvedValue(null);
 
       await expect(service.deleteRankingItem(rankingItemId, userId)).rejects.toThrow('Item do ranking não encontrado 😔');
+    });
+  });
+
+  describe('updateRankingItem', () => {
+    it('should update a ranking item', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = { name: 'Updated' } as any;
+
+      const mockItem = {
+        id: rankingItemId,
+        rankingId,
+      } as any;
+
+      const expected = { id: rankingItemId, name: 'Updated' } as any;
+
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(mockItem);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.updateRankingItem.mockResolvedValue(expected);
+
+      const result = await service.updateRankingItem(
+        rankingId,
+        rankingItemId,
+        userId,
+        updateDto,
+      );
+
+      expect(result).toEqual(expected);
+      expect(rankingItemRepository.updateRankingItem).toHaveBeenCalled();
+    });
+
+    it('should throw if item not found', async () => {
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(null);
+      await expect(
+        service.updateRankingItem('ranking-id', 'item-id', 'user-id', {} as any),
+      ).rejects.toThrow('Item do ranking não encontrado 😔');
+    });
+
+    it('should sync photos: add new and remove missing', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = { photos: ['a', 'b', 'c'] } as any;
+
+      const mockItem = { id: rankingItemId, rankingId } as any;
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(mockItem);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.updateRankingItem.mockResolvedValue({ id: rankingItemId });
+
+      // Existing: a, x
+      mockRankingItemRepository.getRankingItemUserPhotosByUser.mockResolvedValue(['a', 'x']);
+
+      const result = await service.updateRankingItem(
+        rankingId,
+        rankingItemId,
+        userId,
+        updateDto,
+      );
+
+      // Should add b and c
+      expect(mockRankingItemRepository.createRankingItemUserPhoto).toHaveBeenCalledTimes(2);
+      // Should remove x
+      expect(mockRankingItemRepository.deleteRankingItemUserPhotos).toHaveBeenCalledWith(
+        rankingItemId,
+        userId,
+        ['x'],
+      );
+      expect(result).toEqual({ id: rankingItemId });
     });
   });
 }); 

@@ -165,4 +165,48 @@ export class RankingItemRepository {
       throw error;
     }
   }
+
+  async getRankingItemUserPhotosByUser(rankingItemId: string, userId: string) {
+    try {
+      const photos = await this.prismaService.rankingItemUserPhoto.findMany({
+        where: { rankingItemId, userId },
+        select: { photoId: true },
+      });
+      return photos.map((p) => p.photoId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : JSON.stringify(error);
+      Logger.error(
+        `Error fetching ranking item user photos: ${message}`,
+        'RankingRepository.getRankingItemUserPhotosByUser',
+      );
+      throw error instanceof Error ? error : new Error('Unknown error fetching ranking item user photos');
+    }
+  }
+
+  async deleteRankingItemUserPhotos(
+    rankingItemId: string,
+    userId: string,
+    photoIds: string[],
+  ) {
+    try {
+      if (!photoIds || photoIds.length === 0) return;
+
+      await this.prismaService.rankingItemUserPhoto.deleteMany({
+        where: {
+          rankingItemId,
+          userId,
+          photoId: { in: photoIds },
+        },
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : JSON.stringify(error);
+      Logger.error(
+        `Error deleting ranking item user photos: ${message}`,
+        'RankingRepository.deleteRankingItemUserPhotos',
+      );
+      throw error instanceof Error
+        ? error
+        : new Error('Unknown error deleting ranking item user photos');
+    }
+  }
 }

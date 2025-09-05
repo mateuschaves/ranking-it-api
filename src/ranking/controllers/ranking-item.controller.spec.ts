@@ -12,6 +12,7 @@ describe('RankingItemController', () => {
     createRankingItem: jest.fn(),
     getRankingItems: jest.fn(),
     deleteRankingItem: jest.fn(),
+    updateRankingItem: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -110,6 +111,33 @@ describe('RankingItemController', () => {
       await controller.deleteRankingItem(rankingId, rankingItemId, userId);
 
       expect(service.deleteRankingItem).toHaveBeenCalledWith(rankingItemId, userId);
+    });
+  });
+
+  describe('updateRankingItem', () => {
+    it('should update a ranking item', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = { name: 'Updated' } as any;
+
+      const expected = { id: rankingItemId, name: 'Updated' } as any;
+      mockRankingItemService.updateRankingItem.mockResolvedValue(expected);
+
+      const result = await controller.updateRankingItem(
+        rankingId,
+        rankingItemId,
+        updateDto,
+        userId,
+      );
+
+      expect(service.updateRankingItem).toHaveBeenCalledWith(
+        rankingId,
+        rankingItemId,
+        userId,
+        updateDto,
+      );
+      expect(result).toEqual(expected);
     });
   });
 }); 
