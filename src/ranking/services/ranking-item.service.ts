@@ -5,6 +5,7 @@ import { RankingItemRepository } from '../repositories/ranking-item.repository';
 import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
 import { ExpoPushService } from 'src/shared/services/expo-push.service';
+import UpdateRankingItemDto from '../dto/update-ranking-item.dto';
 
 @Injectable()
 export class RankingItemService {
@@ -129,6 +130,47 @@ export class RankingItemService {
         throw error;
       }
       throw new BadRequestException('Erro ao deletar o item do ranking 😔');
+    }
+  }
+
+  async updateRankingItem(
+    rankingId: string,
+    rankingItemId: string,
+    userId: string,
+    updateDto: UpdateRankingItemDto,
+  ) {
+    try {
+      const rankingItem =
+        await this.rankingItemRepository.getRankingItemById(rankingItemId);
+
+      if (!rankingItem)
+        throw new BadRequestException('Item do ranking não encontrado 😔');
+
+      if (rankingItem.rankingId !== rankingId)
+        throw new BadRequestException('Item não pertence a este ranking 😔');
+
+      await this.rankingValidationsService.existRankingUser(
+        rankingItem.rankingId,
+        userId,
+      );
+
+      const updated = await this.rankingItemRepository.updateRankingItem(
+        rankingItemId,
+        {
+          name: updateDto.name,
+          description: updateDto.description,
+          link: updateDto.link,
+          latitude: updateDto.latitude as unknown as number,
+          longitude: updateDto.longitude as unknown as number,
+        },
+      );
+
+      return updated;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erro ao atualizar o item do ranking 😔');
     }
   }
 }
