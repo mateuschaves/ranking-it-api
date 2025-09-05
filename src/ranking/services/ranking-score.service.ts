@@ -2,12 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { RankingValidationsService } from './ranking-validations.service';
 import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 import CreateRankingItemScoreDto from '../dto/create-ranking-item-score.dto';
+import { RankingUserRepository } from '../repositories/ranking-user.repository';
+import { ExpoPushService } from 'src/shared/services/expo-push.service';
 
 @Injectable()
 export class RankingScoreService {
   constructor(
     private readonly rankingScoreRepository: RankingScoreRepository,
     private readonly rankingValidationsService: RankingValidationsService,
+    private readonly rankingUserRepository: RankingUserRepository,
+    private readonly expoPushService: ExpoPushService,
   ) {}
 
   async createRankingScore(createRankingScoreDto: CreateRankingItemScoreDto) {
@@ -29,19 +33,51 @@ export class RankingScoreService {
         );
 
       if (existScore?.id) {
-        return await this.rankingScoreRepository.updateRankingScore(
+        const updated = await this.rankingScoreRepository.updateRankingScore(
           existScore.id,
           {
             score,
           },
         );
+        // Notify ranking users about score update
+        try {
+          const rankingItem = await this.rankingValidationsService.existRankingItem(rankingItemId);
+          const tokens = await this.rankingUserRepository.getRankingUsersPushTokens(
+            rankingItem.rankingId,
+            userId,
+          );
+          if (tokens?.length > 0) {
+            await this.expoPushService.sendBulkPushNotifications(
+              tokens,
+              'Item avaliado 📝',
+              'Uma pontuação do item do ranking foi atualizada.',
+            );
+          }
+        } catch {}
+        return updated;
       } else {
-        return await this.rankingScoreRepository.createRankingScore({
+        const created = await this.rankingScoreRepository.createRankingScore({
           userId,
           score,
           rankingItemId,
           rankingCriteriaId: createRankingScoreDto.rankingCriteriaId,
         });
+        // Notify ranking users about new evaluation
+        try {
+          const rankingItem = await this.rankingValidationsService.existRankingItem(rankingItemId);
+          const tokens = await this.rankingUserRepository.getRankingUsersPushTokens(
+            rankingItem.rankingId,
+            userId,
+          );
+          if (tokens?.length > 0) {
+            await this.expoPushService.sendBulkPushNotifications(
+              tokens,
+              'Novo voto no ranking ✅',
+              'Um item recebeu uma nova avaliação.',
+            );
+          }
+        } catch {}
+        return created;
       }
     } catch (error) {
       if (error instanceof BadRequestException) {
