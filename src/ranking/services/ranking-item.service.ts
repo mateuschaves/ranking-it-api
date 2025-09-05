@@ -3,6 +3,8 @@ import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingValidationsService } from './ranking-validations.service';
 import { RankingItemRepository } from '../repositories/ranking-item.repository';
 import { RankingScoreRepository } from '../repositories/ranking-score.repository';
+import { RankingUserRepository } from '../repositories/ranking-user.repository';
+import { ExpoPushService } from 'src/shared/services/expo-push.service';
 
 @Injectable()
 export class RankingItemService {
@@ -10,6 +12,8 @@ export class RankingItemService {
     private readonly rankingItemRepository: RankingItemRepository,
     private readonly rankingItemScoreRepository: RankingScoreRepository,
     private readonly rankingValidationsService: RankingValidationsService,
+    private readonly rankingUserRepository: RankingUserRepository,
+    private readonly expoPushService: ExpoPushService,
   ) {}
 
   async createRankingItem(createRankingItemDto: CreateRankingItemDto) {
@@ -44,6 +48,21 @@ export class RankingItemService {
           ),
         );
       }
+
+      // Notify ranking users (excluding creator)
+      try {
+        const tokens = await this.rankingUserRepository.getRankingUsersPushTokens(
+          createRankingItemDto.rankingId,
+          createRankingItemDto.createdById,
+        );
+        if (tokens?.length > 0) {
+          await this.expoPushService.sendBulkPushNotifications(
+            tokens,
+            'Novo item no ranking ✨',
+            `${createRankingItemDto.name} foi adicionado ao ranking!`,
+          );
+        }
+      } catch {}
 
       return rankingItemCreated;
     } catch (error) {

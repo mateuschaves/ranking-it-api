@@ -278,4 +278,34 @@ export class RankingUserRepository {
       throw error;
     }
   }
+
+  async getRankingUsersPushTokens(rankingId: string, excludeUserId?: string) {
+    try {
+      const memberships = await this.prismaService.userRanking.findMany({
+        where: {
+          rankingId,
+          ...(excludeUserId && { userId: { not: excludeUserId } }),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              pushToken: true,
+            },
+          },
+        },
+      });
+
+      return memberships
+        .map((m) => m.user?.pushToken)
+        .filter((token): token is string => Boolean(token));
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking users push tokens ${error}`,
+        'RankingRepository.getRankingUsersPushTokens',
+      );
+      throw error;
+    }
+  }
 }
