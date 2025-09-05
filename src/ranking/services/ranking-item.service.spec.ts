@@ -4,12 +4,16 @@ import { RankingItemRepository } from '../repositories/ranking-item.repository';
 import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 import { RankingValidationsService } from './ranking-validations.service';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
+import { RankingUserRepository } from '../repositories/ranking-user.repository';
+import { ExpoPushService } from 'src/shared/services/expo-push.service';
 
 describe('RankingItemService', () => {
   let service: RankingItemService;
   let rankingItemRepository: RankingItemRepository;
   let rankingScoreRepository: RankingScoreRepository;
   let rankingValidationsService: RankingValidationsService;
+  let rankingUserRepository: RankingUserRepository;
+  let expoPushService: ExpoPushService;
 
   const mockRankingItemRepository = {
     createRankingItem: jest.fn(),
@@ -29,6 +33,14 @@ describe('RankingItemService', () => {
     existRanking: jest.fn(),
   };
 
+  const mockRankingUserRepository = {
+    getRankingUsersPushTokens: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockExpoPushService = {
+    sendBulkPushNotifications: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,6 +57,14 @@ describe('RankingItemService', () => {
           provide: RankingValidationsService,
           useValue: mockRankingValidationsService,
         },
+        {
+          provide: RankingUserRepository,
+          useValue: mockRankingUserRepository,
+        },
+        {
+          provide: ExpoPushService,
+          useValue: mockExpoPushService,
+        },
       ],
     }).compile();
 
@@ -52,6 +72,8 @@ describe('RankingItemService', () => {
     rankingItemRepository = module.get<RankingItemRepository>(RankingItemRepository);
     rankingScoreRepository = module.get<RankingScoreRepository>(RankingScoreRepository);
     rankingValidationsService = module.get<RankingValidationsService>(RankingValidationsService);
+    rankingUserRepository = module.get<RankingUserRepository>(RankingUserRepository);
+    expoPushService = module.get<ExpoPushService>(ExpoPushService);
   });
 
   afterEach(() => {

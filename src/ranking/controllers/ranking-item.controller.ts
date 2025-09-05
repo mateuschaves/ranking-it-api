@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { GetUser } from '../../user/decorators/get-current-user.decorator';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingItemService } from '../services/ranking-item.service';
@@ -24,6 +24,33 @@ export class RankingItemController {
   @Post(':rankingId/items')
   @ApiOperation({ summary: 'Create a new item for a ranking' })
   @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiBody({
+    description: 'Payload to create a ranking item',
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Restaurante XPTO' },
+        description: { type: 'string', example: 'Descrição do item' },
+        photos: {
+          type: 'array',
+          items: { type: 'string', example: 'file-id-123' },
+          description: 'Optional array of uploaded file IDs to attach as photos',
+        },
+        link: { type: 'string', example: 'https://example.com' },
+        latitude: { type: 'string', example: '-23.5505' },
+        longitude: { type: 'string', example: '-46.6333' },
+      },
+      required: ['name'],
+      example: {
+        name: 'Restaurante XPTO',
+        description: 'Descrição do item',
+        photos: ['file-id-123', 'file-id-456'],
+        link: 'https://example.com',
+        latitude: '-23.5505',
+        longitude: '-46.6333',
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Item created successfully',

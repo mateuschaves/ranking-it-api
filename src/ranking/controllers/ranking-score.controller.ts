@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { RankingScoreService } from '../services/ranking-score.service';
 import CreateRankingItemScoreDto from '../dto/create-ranking-item-score.dto';
 import { GetUser } from 'src/user/decorators/get-current-user.decorator';
@@ -24,6 +24,21 @@ export class RankingScoreController {
   @ApiOperation({ summary: 'Create a new score for a ranking item' })
   @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
   @ApiParam({ name: 'rankingItemId', description: 'ID of the ranking item' })
+  @ApiBody({
+    description: 'Payload to create/update a score for an item criterion',
+    schema: {
+      type: 'object',
+      properties: {
+        rankingCriteriaId: { type: 'string', example: 'criteria-123' },
+        score: { type: 'number', minimum: 0, maximum: 10, example: 8 },
+      },
+      required: ['rankingCriteriaId', 'score'],
+      example: {
+        rankingCriteriaId: 'criteria-123',
+        score: 8,
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Score created successfully',

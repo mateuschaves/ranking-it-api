@@ -9,7 +9,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtUserPayload } from '../shared/interfaces/jwt-user-payload.entity';
@@ -30,6 +30,29 @@ export class FilesController {
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Upload a file' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Multipart form with the file and visibility flag',
+    schema: {
+      type: 'object',
+      properties: {
+        attachment: {
+          type: 'string',
+          format: 'binary',
+          description: 'The file to upload',
+        },
+        public: {
+          type: 'string',
+          enum: ['true', 'false'],
+          default: 'false',
+          description: 'If true, file becomes public (default false)',
+        },
+      },
+      required: ['attachment'],
+      example: {
+        public: 'false',
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'File uploaded successfully',
