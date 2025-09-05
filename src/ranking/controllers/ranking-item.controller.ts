@@ -244,11 +244,6 @@ export class RankingItemController {
       properties: {
         name: { type: 'string', example: 'Novo nome do item' },
         description: { type: 'string', example: 'Nova descrição' },
-        photos: {
-          type: 'array',
-          items: { type: 'string', example: 'file-id-123' },
-          description: 'Lista de IDs de fotos (opcional)',
-        },
         link: { type: 'string', example: 'https://example.com' },
         latitude: { type: 'string', example: '-23.5505' },
         longitude: { type: 'string', example: '-46.6333' },
