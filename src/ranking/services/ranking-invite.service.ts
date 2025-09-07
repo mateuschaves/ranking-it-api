@@ -36,7 +36,7 @@ export class RankingInviteService {
 
       // Check if user is already a member of the ranking
       const existingUser = await this.userRepository.findByEmail(
-        createRankingInviteDto.email,
+        createRankingInviteDto.email?.toLowerCase(),
       );
 
       if (existingUser) {
@@ -54,7 +54,7 @@ export class RankingInviteService {
 
       // Check if invite already exists
       const existingInvites = await this.rankingUserRepository.getRankingInvitesByEmail(
-        createRankingInviteDto.email,
+        createRankingInviteDto.email?.toLowerCase(),
       );
 
       const inviteAlreadyExists = existingInvites.some(
@@ -69,7 +69,7 @@ export class RankingInviteService {
 
       // Create the invite
       const invite = await this.rankingUserRepository.createRankingInvite({
-        email: createRankingInviteDto.email,
+        email: createRankingInviteDto.email?.toLowerCase(),
         rankingId: createRankingInviteDto.rankingId,
         invitedById,
       });
@@ -90,8 +90,8 @@ export class RankingInviteService {
           // Get inviter details
           const inviter = await this.userRepository.findOne({ id: invitedById });
           
-          const title = 'New Ranking Invitation! 🎯';
-          const body = `${inviter?.name || 'Someone'} invited you to join "${ranking.name}"`;
+          const title = 'Novo convite para ranking! 🎯';
+          const body = `${inviter?.name || 'Alguém'} convidou você para participar de "${ranking.name}"`;
           
           await this.expoPushService.sendPushNotification(
             existingUser.pushToken,
@@ -245,6 +245,26 @@ export class RankingInviteService {
         'RankingInviteService.acceptRankingInvite',
       );
 
+      // Notify all ranking users (excluding the acceptor)
+      try {
+        const tokens = await this.rankingUserRepository.getRankingUsersPushTokens(
+          invite.rankingId,
+          userId,
+        );
+        if (tokens?.length > 0) {
+          await this.expoPushService.sendBulkPushNotifications(
+            tokens,
+            'Novo membro no ranking 🎉',
+            `${user.name || 'Um usuário'} entrou no ranking "${invite.ranking.name}"`,
+          );
+        }
+      } catch (pushError) {
+        Logger.error(
+          `Failed to send acceptance notification: ${pushError}`,
+          'RankingInviteService.acceptRankingInvite',
+        );
+      }
+
       return {
         message: 'Invite accepted successfully',
         rankingId: invite.rankingId,
@@ -297,6 +317,27 @@ export class RankingInviteService {
         `Ranking invite declined successfully: ${inviteId}`,
         'RankingInviteService.declineRankingInvite',
       );
+
+      // Notify ranking users of decline (excluding decliner)
+      try {
+        const user = await this.userRepository.findOne({ id: userId });
+        const tokens = await this.rankingUserRepository.getRankingUsersPushTokens(
+          invite.rankingId,
+          userId,
+        );
+        if (tokens?.length > 0) {
+          await this.expoPushService.sendBulkPushNotifications(
+            tokens,
+            'Convite recusado ❌',
+            `${user?.name || 'Um usuário'} recusou o convite do ranking "${invite.ranking.name}"`,
+          );
+        }
+      } catch (pushError) {
+        Logger.error(
+          `Failed to send decline notification: ${pushError}`,
+          'RankingInviteService.declineRankingInvite',
+        );
+      }
 
       return {
         message: 'Invite declined successfully',
