@@ -239,6 +239,29 @@ describe('RankingItemService', () => {
 
       expect(result[0].score).toBe(0);
     });
+
+    it('should convert decimal/string average score to number', async () => {
+      const rankingId = 'ranking-id';
+      const userId = 'user-id';
+
+      const mockItems = [
+        { id: 'item-id-1', name: 'Item 1', description: 'Description 1' },
+      ];
+
+      const expectedResult = [
+        { id: 'item-id-1', name: 'Item 1', description: 'Description 1', score: 8.5 },
+      ];
+
+      mockRankingValidationsService.existRanking.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.getRankingItems.mockResolvedValue(mockItems);
+      // Simulate Prisma Decimal/string-like value
+      mockRankingScoreRepository.getAvgRankingItemScore.mockResolvedValue({ score: '8.5' } as any);
+
+      const result = await service.getRankingItems(rankingId, userId);
+
+      expect(result).toEqual(expectedResult);
+    });
   });
 
   describe('deleteRankingItem', () => {

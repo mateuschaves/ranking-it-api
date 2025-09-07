@@ -89,14 +89,14 @@ export class RankingItemService {
       return (
         await Promise.all(
           rankingItems.map(async (rankingItem) => {
+            const avg = await this.rankingItemScoreRepository.getAvgRankingItemScore(
+              rankingItem.id,
+            );
+            const score = avg && avg.score != null ? Number(avg.score as unknown as string) : 0;
+
             return {
               ...rankingItem,
-              score:
-                (
-                  await this.rankingItemScoreRepository.getAvgRankingItemScore(
-                    rankingItem.id,
-                  )
-                ).score || 0,
+              score,
             };
           }),
         )
