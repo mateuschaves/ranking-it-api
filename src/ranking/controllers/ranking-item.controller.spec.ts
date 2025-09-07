@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RankingItemController } from './ranking-item.controller';
 import { RankingItemService } from '../services/ranking-item.service';
 import { AuthGuard } from '@nestjs/passport';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 
 describe('RankingItemController', () => {
@@ -22,6 +23,10 @@ describe('RankingItemController', () => {
         {
           provide: RankingItemService,
           useValue: mockRankingItemService,
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {},
         },
       ],
     })

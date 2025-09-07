@@ -1,4 +1,5 @@
 import { Body, Controller, Post, Get, UseGuards, Patch } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
 import SignUpDto from '../dto/SignUpDto';
@@ -52,6 +53,7 @@ export class UserController {
   }
 
   @Post('/signin')
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @ApiOperation({ summary: 'Sign in with existing account' })
   @ApiBody({ type: SignInDto })
   @ApiResponse({
