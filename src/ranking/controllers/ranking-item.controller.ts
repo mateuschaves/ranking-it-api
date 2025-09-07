@@ -148,6 +148,19 @@ export class RankingItemController {
                 photoId: { type: 'string', example: 'file-123' },
                 userId: { type: 'string', example: 'user-123' },
                 createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string', example: 'user-123' },
+                    name: { type: 'string', example: 'John Doe' },
+                    avatar: {
+                      type: 'object',
+                      properties: {
+                        url: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg' },
+                      },
+                    },
+                  },
+                },
                 photo: {
                   type: 'object',
                   properties: {
@@ -182,6 +195,13 @@ export class RankingItemController {
               photoId: 'file-123',
               userId: 'user-123',
               createdAt: '2024-07-01T12:00:00.000Z',
+              user: {
+                id: 'user-123',
+                name: 'John Doe',
+                avatar: {
+                  url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+                },
+              },
               photo: {
                 url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/photo.jpg',
               },

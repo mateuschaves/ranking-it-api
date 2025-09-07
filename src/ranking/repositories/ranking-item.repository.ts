@@ -44,6 +44,17 @@ export class RankingItemRepository {
               photoId: true,
               userId: true,
               createdAt: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: {
+                    select: {
+                      url: true,
+                    },
+                  },
+                },
+              },
               photo: {
                 select: {
                   url: true,
@@ -76,6 +87,14 @@ export class RankingItemRepository {
         },
         rankingItemUserPhoto: item.rankingItemUserPhoto.map(photo => ({
           ...photo,
+          user: photo.user
+            ? {
+                ...photo.user,
+                avatar: {
+                  url: UrlUtil.getAvatarUrl(photo.user.avatar),
+                },
+              }
+            : null,
           photo: {
             url: UrlUtil.getFullUrl(photo.photo.url),
           },
