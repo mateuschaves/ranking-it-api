@@ -8,12 +8,14 @@ import {
   Patch,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { GetUser } from '../../user/decorators/get-current-user.decorator';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingItemService } from '../services/ranking-item.service';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import UpdateRankingItemDto from '../dto/update-ranking-item.dto';
 
 @ApiTags('Ranking Items')
@@ -108,6 +110,7 @@ export class RankingItemController {
     );
   }
 
+  @UseInterceptors(CacheInterceptor)
   @Get(':rankingId/items')
   @ApiOperation({ summary: 'Get all items for a specific ranking' })
   @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })

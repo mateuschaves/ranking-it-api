@@ -8,6 +8,9 @@ import { FilesModule } from './files/files.module';
 import { AwsSdkModule } from 'nest-aws-sdk';
 import { S3 } from 'aws-sdk';
 import { AiModule } from './ai/ai.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -16,6 +19,13 @@ import { AiModule } from './ai/ai.module';
     RankingModule,
     FilesModule,
     AiModule,
+    CacheModule.register({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: 100,
+      },
+    ]),
     AwsSdkModule.forRoot({
       defaultServiceOptions: {
         endpoint: process.env.AWS_S3_ENDPOINT,
@@ -29,6 +39,12 @@ import { AiModule } from './ai/ai.module';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
