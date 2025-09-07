@@ -197,8 +197,8 @@ describe('RankingInviteService', () => {
 
       expect(expoPushService.sendPushNotification).toHaveBeenCalledWith(
         'ExponentPushToken[test-token]',
-        'New Ranking Invitation! 🎯',
-        'John Doe invited you to join "Test Ranking"',
+        'Novo convite para ranking! 🎯',
+        'John Doe convidou você para participar de "Test Ranking"',
       );
     });
 

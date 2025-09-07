@@ -297,6 +297,8 @@ export class RankingUserRepository {
         },
       });
 
+      Logger.debug(memberships, 'memberships');
+
       return memberships
         .map((m) => m.user?.pushToken)
         .filter((token): token is string => Boolean(token));
