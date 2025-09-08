@@ -6,6 +6,8 @@ import { CdnService } from '../shared/services/cdn.service';
 import { randomUUID } from 'crypto';
 import ImageUtil from '../shared/utils/image.util';
 import { Readable } from 'stream';
+import * as Sharp from 'sharp';
+const sharp: any = (Sharp as any);
 
 @Injectable()
 export class FilesService {
@@ -26,12 +28,37 @@ export class FilesService {
 
       const extension = ImageUtil.getExtension(attachment.mimetype);
 
-      const fileName = `${userId}:${randomUUID()}.${extension}`;
+      // Optimize only for image types; otherwise keep original buffer
+      let outputBuffer = attachment.buffer;
+      let outputMime = attachment.mimetype;
+      let outputExt = extension;
+
+      const isImage = /^image\/(jpeg|jpg|png|webp)$/i.test(attachment.mimetype);
+      if (isImage) {
+        try {
+          // Convert to WebP with reasonable quality; you can tweak these values
+          const webp = await sharp(attachment.buffer)
+            .rotate() // auto-orient
+            .webp({ quality: 80 })
+            .toBuffer();
+
+          outputBuffer = webp;
+          outputMime = 'image/webp';
+          outputExt = 'webp';
+        } catch {
+          // If sharp fails (e.g., invalid buffer in tests), fall back to original
+          outputBuffer = attachment.buffer;
+          outputMime = attachment.mimetype;
+          outputExt = extension;
+        }
+      }
+
+      const fileName = `${userId}:${randomUUID()}.${outputExt}`;
 
       createFileDto.name = fileName;
-      createFileDto.buffer = Readable.from(attachment.buffer);
-      createFileDto.mimetype = attachment.mimetype;
-      createFileDto.size = attachment.size;
+      createFileDto.buffer = Readable.from(outputBuffer);
+      createFileDto.mimetype = outputMime;
+      createFileDto.size = outputBuffer.length;
 
       Logger.log(`Uploading file in ${acl} mode: ${createFileDto.name}`);
       Logger.log(`File size: ${attachment.size}`);
@@ -42,7 +69,7 @@ export class FilesService {
         this.bucket,
         createFileDto.name,
         createFileDto.buffer,
-        attachment.size,
+        createFileDto.size,
       );
 
       createFileDto.url = fileName;

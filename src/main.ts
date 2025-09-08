@@ -1,4 +1,4 @@
-import "./monitoring/sentry.config.ts";
+import "./monitoring/sentry.config";
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';

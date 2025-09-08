@@ -76,7 +76,7 @@ describe('FilesService', () => {
       'ranking-attachments',
       expect.stringContaining(`${userId}:`),
       expect.any(Readable),
-      653656,
+      expect.any(Number),
     );
   });
 

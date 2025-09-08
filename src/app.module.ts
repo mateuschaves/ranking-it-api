@@ -12,6 +12,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
+import { APP_FILTER } from "@nestjs/core";
+import { SentryGlobalFilter } from "@sentry/nestjs/setup";
 
 @Module({
   imports: [
@@ -42,6 +44,10 @@ import { SentryModule } from '@sentry/nestjs/setup';
   ],
   controllers: [AppController],
   providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
     AppService,
     {
       provide: APP_GUARD,
