@@ -310,4 +310,150 @@ export class RankingUserRepository {
       throw error;
     }
   }
+
+  async removeUserFromRanking(rankingId: string, userId: string) {
+    try {
+      return await this.prismaService.userRanking.deleteMany({
+        where: {
+          rankingId,
+          userId,
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error removing user from ranking ${error}`,
+        'RankingUserRepository.removeUserFromRanking',
+      );
+      throw error;
+    }
+  }
+
+  async isRankingOwner(rankingId: string, userId: string) {
+    try {
+      const ranking = await this.prismaService.ranking.findUnique({
+        where: { id: rankingId },
+        select: { ownerId: true },
+      });
+
+      return ranking?.ownerId === userId;
+    } catch (error) {
+      Logger.error(
+        `Error checking if user is ranking owner ${error}`,
+        'RankingUserRepository.isRankingOwner',
+      );
+      throw error;
+    }
+  }
+
+  async getRankingDetails(rankingId: string) {
+    try {
+      const ranking = await this.prismaService.ranking.findUnique({
+        where: { id: rankingId },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: {
+                select: {
+                  url: true,
+                },
+              },
+            },
+          },
+          banner: {
+            select: {
+              url: true,
+            },
+          },
+          rankingCriteria: {
+            select: {
+              id: true,
+              name: true,
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          userRanking: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: {
+                    select: {
+                      url: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          rankingInvite: {
+            select: {
+              id: true,
+              email: true,
+              createdAt: true,
+              invitedBy: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: {
+                    select: {
+                      url: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+        },
+      });
+
+      if (!ranking) {
+        return null;
+      }
+
+      // Processar URLs completas
+      return {
+        ...ranking,
+        banner: ranking.banner ? UrlUtil.getFullUrl(ranking.banner.url) : null,
+        owner: {
+          ...ranking.owner,
+          avatar: {
+            url: UrlUtil.getAvatarUrl(ranking.owner.avatar),
+          },
+        },
+        members: ranking.userRanking.map(membership => ({
+          ...membership.user,
+          avatar: {
+            url: UrlUtil.getAvatarUrl(membership.user.avatar),
+          },
+          joinedAt: membership.createdAt,
+        })),
+        pendingInvites: ranking.rankingInvite.map(invite => ({
+          ...invite,
+          invitedBy: {
+            ...invite.invitedBy,
+            avatar: {
+              url: UrlUtil.getAvatarUrl(invite.invitedBy.avatar),
+            },
+          },
+        })),
+        criteria: ranking.rankingCriteria,
+      };
+    } catch (error) {
+      Logger.error(
+        `Error fetching ranking details ${error}`,
+        'RankingUserRepository.getRankingDetails',
+      );
+      throw error;
+    }
+  }
 }
