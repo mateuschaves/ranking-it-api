@@ -4,6 +4,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { EncryptService } from '../../shared/services/encrypt.service';
 import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { OAuthValidatorService } from './oauth-validator.service';
 
 describe('UserService', () => {
   let service: UserService;
@@ -26,6 +27,11 @@ describe('UserService', () => {
       compare: jest.fn(),
     };
 
+    const mockOAuthValidatorService = {
+      validateGoogleToken: jest.fn(),
+      validateAppleToken: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -40,6 +46,10 @@ describe('UserService', () => {
         {
           provide: EncryptService,
           useValue: mockEncryptService,
+        },
+        {
+          provide: OAuthValidatorService,
+          useValue: mockOAuthValidatorService,
         },
       ],
     }).compile();
@@ -173,6 +183,103 @@ describe('UserService', () => {
         message: 'Push token atualizado com sucesso',
       });
       expect(userRepository.updateById).toHaveBeenCalledWith(userId, { pushToken: newPushToken });
+    });
+  });
+
+  describe('validateOAuthUser', () => {
+    it('should create new Google OAuth user', async () => {
+      // Arrange
+      const profile = {
+        googleId: 'google123',
+        email: 'john@example.com',
+        name: 'John Doe',
+      };
+
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.create.mockResolvedValue({
+        id: 'user123',
+        email: 'john@example.com',
+        name: 'John Doe',
+        googleId: 'google123',
+        password: null,
+      } as any);
+
+      const mockJwtService = service['jwtService'];
+      mockJwtService.signAsync = jest.fn()
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
+
+      // Act
+      const result = await service.validateOAuthUser(profile, 'google');
+
+      // Assert
+      expect(result).toEqual({
+        user: {
+          id: 'user123',
+          email: 'john@example.com',
+          name: 'John Doe',
+        },
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      });
+      expect(userRepository.create).toHaveBeenCalledWith({
+        email: 'john@example.com',
+        name: 'John Doe',
+        password: null,
+        googleId: 'google123',
+      });
+    });
+
+    it('should login existing Apple OAuth user', async () => {
+      // Arrange
+      const profile = {
+        appleId: 'apple123',
+        email: 'john@example.com',
+        name: 'John Doe',
+      };
+
+      const existingUser = {
+        id: 'user123',
+        email: 'john@example.com',
+        name: 'John Doe',
+        appleId: null,
+      };
+
+      userRepository.findOne.mockResolvedValue(existingUser as any);
+      userRepository.updateById.mockResolvedValue(existingUser as any);
+
+      const mockJwtService = service['jwtService'];
+      mockJwtService.signAsync = jest.fn()
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
+
+      // Act
+      const result = await service.validateOAuthUser(profile, 'apple');
+
+      // Assert
+      expect(result).toEqual({
+        user: {
+          id: 'user123',
+          email: 'john@example.com',
+          name: 'John Doe',
+        },
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      });
+      expect(userRepository.updateById).toHaveBeenCalledWith('user123', { appleId: 'apple123' });
+    });
+
+    it('should throw error when email is missing', async () => {
+      // Arrange
+      const profile = {
+        googleId: 'google123',
+        name: 'John Doe',
+      };
+
+      // Act & Assert
+      await expect(service.validateOAuthUser(profile, 'google')).rejects.toThrow(
+        new InternalServerErrorException('Erro ao validar usuário OAuth')
+      );
     });
   });
 });

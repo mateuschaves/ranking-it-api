@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import SignUpDto from '../dto/SignUpDto';
 import { EncryptService } from 'src/shared/services/encrypt.service';
 import { jwtConstants } from 'src/shared/constants/jwt.constants';
+import { OAuthValidatorService } from './oauth-validator.service';
 
 @Injectable()
 export class UserService {
@@ -17,6 +18,7 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly encryptService: EncryptService,
+    private readonly oauthValidatorService: OAuthValidatorService,
   ) {}
 
   async createAccount(createAccountRequest: SignUpDto) {
@@ -81,6 +83,9 @@ export class UserService {
       }
 
       Logger.log('checking if password is correct', 'UserService.login');
+      if (!user.password) {
+        throw new BadRequestException('Usuário criado via OAuth, use login social');
+      }
       const passwordMatch = await this.encryptService.compare(
         user.password,
         password,
@@ -193,6 +198,145 @@ export class UserService {
         throw error;
       }
       throw new InternalServerErrorException('Erro ao atualizar push token');
+    }
+  }
+
+  async validateOAuthUser(profile: any, provider: 'google' | 'apple') {
+    try {
+      Logger.log(`Validating OAuth user from ${provider}`, 'UserService.validateOAuthUser');
+      
+      const email = profile.email;
+      if (!email) {
+        throw new BadRequestException('Email não encontrado no perfil OAuth');
+      }
+
+      // Check if user already exists
+      let user = await this.userRepository.findOne({ email });
+      
+      if (user) {
+        // Update provider ID if not set
+        const updateData: any = {};
+        if (provider === 'google' && !user.googleId) {
+          updateData.googleId = profile.googleId;
+        } else if (provider === 'apple' && !user.appleId) {
+          updateData.appleId = profile.appleId;
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          await this.userRepository.updateById(user.id, updateData);
+        }
+      } else {
+        // Create new user
+        const userData: any = {
+          email,
+          name: profile.name,
+          password: null, // OAuth users don't have passwords
+        };
+
+        if (provider === 'google') {
+          userData.googleId = profile.googleId;
+        } else if (provider === 'apple') {
+          userData.appleId = profile.appleId;
+        }
+
+        user = await this.userRepository.create(userData);
+        Logger.log(`Created new OAuth user: ${user.id}`, 'UserService.validateOAuthUser');
+      }
+
+      const tokens = await this.generateTokens(user.id);
+      
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
+        ...tokens,
+      };
+    } catch (error) {
+      Logger.error(error, 'UserService.validateOAuthUser');
+      throw new InternalServerErrorException('Erro ao validar usuário OAuth');
+    }
+  }
+
+  async validateMobileOAuthUser(requestData: any, provider: 'google' | 'apple') {
+    try {
+      Logger.log(`Validating mobile OAuth user from ${provider}`, 'UserService.validateMobileOAuthUser');
+      
+      let validatedProfile: any;
+      
+      if (provider === 'google') {
+        // Validar token Google com Google APIs
+        validatedProfile = await this.oauthValidatorService.validateGoogleToken(requestData.idToken);
+      } else if (provider === 'apple') {
+        // Validar token Apple
+        validatedProfile = await this.oauthValidatorService.validateAppleToken(
+          requestData.identityToken, 
+          requestData.user
+        );
+        
+        // Para Apple, o nome vem do request (só disponível na primeira vez)
+        if (requestData.fullName) {
+          validatedProfile.name = `${requestData.fullName.givenName || ''} ${requestData.fullName.familyName || ''}`.trim();
+        } else {
+          validatedProfile.name = 'Apple User';
+        }
+      }
+
+      const email = validatedProfile.email;
+      if (!email) {
+        throw new BadRequestException('Email não encontrado no perfil OAuth');
+      }
+
+      // Check if user already exists
+      let user = await this.userRepository.findOne({ email });
+      
+      if (user) {
+        // Update provider ID if not set
+        const updateData: any = {};
+        if (provider === 'google' && !user.googleId) {
+          updateData.googleId = validatedProfile.googleId;
+        } else if (provider === 'apple' && !user.appleId) {
+          updateData.appleId = validatedProfile.appleId;
+        }
+        
+        if (Object.keys(updateData).length > 0) {
+          await this.userRepository.updateById(user.id, updateData);
+        }
+      } else {
+        // Create new user
+        const userData: any = {
+          email,
+          name: validatedProfile.name,
+          password: null, // OAuth users don't have passwords
+        };
+
+        if (provider === 'google') {
+          userData.googleId = validatedProfile.googleId;
+        } else if (provider === 'apple') {
+          userData.appleId = validatedProfile.appleId;
+        }
+
+        user = await this.userRepository.create(userData);
+        Logger.log(`Created new mobile OAuth user: ${user.id}`, 'UserService.validateMobileOAuthUser');
+      }
+
+      const tokens = await this.generateTokens(user.id);
+      
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
+        ...tokens,
+      };
+    } catch (error) {
+      Logger.error(error, 'UserService.validateMobileOAuthUser');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Erro ao validar usuário OAuth mobile');
     }
   }
 

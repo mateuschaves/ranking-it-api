@@ -1,6 +1,8 @@
-import { Body, Controller, Post, Get, UseGuards, Patch } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Patch, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 import SignUpDto from '../dto/SignUpDto';
 import SignInDto from '../dto/SignInDto';
@@ -201,5 +203,214 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Não autorizado. Token JWT ausente ou inválido.' })
   async updatePushToken(@GetUser() userId: string, @Body() body: UpdatePushTokenDto) {
     return this.userService.updatePushToken(userId, body.pushToken);
+  }
+
+  @Get('/auth/google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Iniciar autenticação com Google OAuth' })
+  @ApiResponse({ status: 302, description: 'Redirecionamento para Google OAuth' })
+  async googleAuth(@Req() req: Request) {
+    // Guard redirects to Google
+  }
+
+  @Get('/auth/google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Callback do Google OAuth' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Autenticação Google bem-sucedida',
+    schema: {
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' }
+          }
+        },
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' }
+      }
+    }
+  })
+  async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
+    const result = await this.userService.validateOAuthUser(req.user, 'google');
+    
+    // Redirect to frontend with tokens
+    const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${result.accessToken}&refresh=${result.refreshToken}`;
+    res.redirect(redirectUrl);
+  }
+
+  @Post('/auth/google/mobile')
+  @Throttle({ default: { limit: 5, ttl: 300 } }) // 5 tentativas por 5 minutos
+  @ApiOperation({ summary: 'Autenticação Google para mobile (React Native)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        idToken: { type: 'string', description: 'Google ID Token do React Native' },
+        accessToken: { type: 'string', description: 'Google Access Token' },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' },
+            photo: { type: 'string' }
+          }
+        }
+      },
+      required: ['idToken', 'user']
+    },
+    examples: {
+      example1: {
+        summary: 'Exemplo de request Google',
+        value: {
+          idToken: 'eyJhbGciOiJSUzI1NiIs...',
+          accessToken: 'ya29.a0AfH6SMC...',
+          user: {
+            id: '123456789',
+            email: 'user@gmail.com',
+            name: 'João Silva',
+            photo: 'https://lh3.googleusercontent.com/...'
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Autenticação Google mobile bem-sucedida',
+    schema: {
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' }
+          }
+        },
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Token inválido ou dados faltando',
+    schema: { example: { message: 'Token Google inválido' } }
+  })
+  async googleAuthMobile(@Body() body: any) {
+    return this.userService.validateMobileOAuthUser({
+      idToken: body.idToken,
+    }, 'google');
+  }
+
+  @Get('/auth/apple')
+  @UseGuards(AuthGuard('apple'))
+  @ApiOperation({ summary: 'Iniciar autenticação com Apple OAuth' })
+  @ApiResponse({ status: 302, description: 'Redirecionamento para Apple OAuth' })
+  async appleAuth(@Req() req: Request) {
+    // Guard redirects to Apple
+  }
+
+  @Get('/auth/apple/callback')
+  @UseGuards(AuthGuard('apple'))
+  @ApiOperation({ summary: 'Callback do Apple OAuth' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Autenticação Apple bem-sucedida',
+    schema: {
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' }
+          }
+        },
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' }
+      }
+    }
+  })
+  async appleAuthCallback(@Req() req: Request, @Res() res: Response) {
+    const result = await this.userService.validateOAuthUser(req.user, 'apple');
+    
+    // Redirect to frontend with tokens
+    const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${result.accessToken}&refresh=${result.refreshToken}`;
+    res.redirect(redirectUrl);
+  }
+
+  @Post('/auth/apple/mobile')
+  @Throttle({ default: { limit: 5, ttl: 300 } }) // 5 tentativas por 5 minutos
+  @ApiOperation({ summary: 'Autenticação Apple para mobile (React Native)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        identityToken: { type: 'string', description: 'Apple Identity Token' },
+        authorizationCode: { type: 'string', description: 'Apple Authorization Code' },
+        user: { type: 'string', description: 'Apple User ID' },
+        email: { type: 'string', description: 'Email do usuário (se fornecido)' },
+        fullName: {
+          type: 'object',
+          properties: {
+            givenName: { type: 'string' },
+            familyName: { type: 'string' }
+          },
+          description: 'Nome completo (apenas na primeira vez)'
+        }
+      },
+      required: ['identityToken', 'user']
+    },
+    examples: {
+      example1: {
+        summary: 'Exemplo de request Apple',
+        value: {
+          identityToken: 'eyJraWQiOiI4NkQ4OEtmIiwiYWxnIjoiUlMyNTYifQ...',
+          authorizationCode: 'c1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t1u2v3w4x5y6z7',
+          user: '001234.abc123def456ghi789jkl012mno345pqr678stu901vwx234yz',
+          email: 'user@privaterelay.appleid.com',
+          fullName: {
+            givenName: 'João',
+            familyName: 'Silva'
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Autenticação Apple mobile bem-sucedida',
+    schema: {
+      properties: {
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' }
+          }
+        },
+        accessToken: { type: 'string' },
+        refreshToken: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Token inválido ou dados faltando',
+    schema: { example: { message: 'Token Apple inválido' } }
+  })
+  async appleAuthMobile(@Body() body: any) {
+    return this.userService.validateMobileOAuthUser({
+      identityToken: body.identityToken,
+      user: body.user,
+      fullName: body.fullName,
+    }, 'apple');
   }
 }
