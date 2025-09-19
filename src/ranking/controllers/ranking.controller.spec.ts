@@ -6,6 +6,7 @@ import { RankingInviteService } from '../services/ranking-invite.service';
 
 describe('RankingController', () => {
   let controller: RankingController;
+  let rankingUserService: RankingUserService;
 
   beforeEach(async () => {
     const mockRankingService = {
@@ -19,6 +20,8 @@ describe('RankingController', () => {
 
     const mockRankingUserService = {
       getAllRankingsByUserId: jest.fn(),
+      getRankingDetails: jest.fn(),
+      removeMemberFromRanking: jest.fn(),
     };
 
     const mockRankingInviteService = {
@@ -44,9 +47,31 @@ describe('RankingController', () => {
     }).compile();
 
     controller = module.get<RankingController>(RankingController);
+    rankingUserService = module.get<RankingUserService>(RankingUserService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('removeMemberFromRanking', () => {
+    it('should remove member from ranking', async () => {
+      const rankingId = 'ranking-123';
+      const memberId = 'user-456';
+      const adminId = 'user-123';
+
+      const expectedResult = {
+        message: 'Membro removido com sucesso do ranking',
+        removedUserId: memberId,
+        rankingId,
+      };
+
+      (rankingUserService.removeMemberFromRanking as jest.Mock).mockResolvedValue(expectedResult);
+
+      const result = await controller.removeMemberFromRanking(rankingId, memberId, adminId);
+
+      expect(rankingUserService.removeMemberFromRanking).toHaveBeenCalledWith(rankingId, memberId, adminId);
+      expect(result).toEqual(expectedResult);
+    });
   });
 });

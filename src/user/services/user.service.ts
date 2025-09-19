@@ -81,9 +81,12 @@ export class UserService {
       }
 
       Logger.log('checking if password is correct', 'UserService.login');
+      if (!user.password) {
+        throw new BadRequestException('Usuário criado via OAuth, use login social');
+      }
       const passwordMatch = await this.encryptService.compare(
-        user.password,
         password,
+        user.password,
       );
       if (!passwordMatch) {
         throw new BadRequestException('Senha incorreta 🕵️‍♂️');

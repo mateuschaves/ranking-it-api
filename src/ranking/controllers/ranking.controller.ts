@@ -139,6 +139,161 @@ export class RankingController {
     return await this.rankingUserService.getAllRankingsByUserId(userId);
   }
 
+  @Get(':rankingId')
+  @ApiOperation({ summary: 'Get detailed information about a specific ranking' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranking details retrieved successfully',
+    schema: {
+      properties: {
+        id: { type: 'string', example: 'ranking-123' },
+        name: { type: 'string', example: 'Ranking XPTO' },
+        description: { type: 'string', example: 'Descrição do ranking' },
+        banner: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg' },
+        createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
+        owner: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'user-123' },
+            name: { type: 'string', example: 'John Doe' },
+            email: { type: 'string', example: 'john.doe@example.com' },
+            avatar: {
+              type: 'object',
+              properties: {
+                url: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg' },
+              },
+            },
+          },
+        },
+        members: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'user-456' },
+              name: { type: 'string', example: 'Jane Smith' },
+              email: { type: 'string', example: 'jane.smith@example.com' },
+              avatar: {
+                type: 'object',
+                properties: {
+                  url: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar2.jpg' },
+                },
+              },
+              joinedAt: { type: 'string', format: 'date-time', example: '2024-07-02T10:00:00.000Z' },
+            },
+          },
+        },
+        pendingInvites: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'invite-123' },
+              email: { type: 'string', example: 'pending@example.com' },
+              message: { type: 'string', example: 'Convite para participar do ranking' },
+              createdAt: { type: 'string', format: 'date-time', example: '2024-07-03T14:00:00.000Z' },
+              invitedBy: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string', example: 'user-123' },
+                  name: { type: 'string', example: 'John Doe' },
+                  avatar: {
+                    type: 'object',
+                    properties: {
+                      url: { type: 'string', example: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        criteria: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'criteria-123' },
+              name: { type: 'string', example: 'Qualidade' },
+            },
+          },
+        },
+      },
+      example: {
+        id: 'ranking-123',
+        name: 'Ranking XPTO',
+        description: 'Descrição do ranking',
+        banner: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/banner.jpg',
+        createdAt: '2024-07-01T12:00:00.000Z',
+        owner: {
+          id: 'user-123',
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          avatar: {
+            url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+          },
+        },
+        members: [
+          {
+            id: 'user-123',
+            name: 'John Doe',
+            email: 'john.doe@example.com',
+            avatar: {
+              url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+            },
+            joinedAt: '2024-07-01T12:00:00.000Z',
+          },
+          {
+            id: 'user-456',
+            name: 'Jane Smith',
+            email: 'jane.smith@example.com',
+            avatar: {
+              url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar2.jpg',
+            },
+            joinedAt: '2024-07-02T10:00:00.000Z',
+          },
+        ],
+        pendingInvites: [
+          {
+            id: 'invite-123',
+            email: 'pending@example.com',
+            message: 'Convite para participar do ranking',
+            createdAt: '2024-07-03T14:00:00.000Z',
+            invitedBy: {
+              id: 'user-123',
+              name: 'John Doe',
+              avatar: {
+                url: 'http://ranking-attachments.s3.us-east-1.amazonaws.com/avatar.jpg',
+              },
+            },
+          },
+        ],
+        criteria: [
+          { id: 'criteria-1', name: 'Qualidade' },
+          { id: 'criteria-2', name: 'Preço' },
+          { id: 'criteria-3', name: 'Localização' },
+          { id: 'criteria-4', name: 'Atendimento' },
+        ],
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Ranking not found or user not authorized',
+    schema: { example: { message: 'Ranking não encontrado 😔' } },
+  })
+  async getRankingDetails(
+    @Param('rankingId') rankingId: string,
+    @GetUser() userId: string,
+  ) {
+    Logger.log(
+      `Getting ranking details for ranking ${rankingId} and user ${userId}`,
+      RankingController.name,
+    );
+    return await this.rankingUserService.getRankingDetails(rankingId, userId);
+  }
+
   @Put(':rankingId')
   @ApiOperation({ summary: 'Update a ranking' })
   @ApiParam({ name: 'rankingId', description: 'ID of the ranking to update' })
@@ -268,5 +423,62 @@ export class RankingController {
       RankingController.name,
     );
     return await this.rankingService.removeRankingCriteria(rankingId, criteriaId, userId);
+  }
+
+  @Delete(':rankingId/members/:userId')
+  @ApiOperation({ summary: 'Remove a member from the ranking (Admin only)' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking' })
+  @ApiParam({ name: 'userId', description: 'ID of the user to remove from the ranking' })
+  @ApiResponse({
+    status: 200,
+    description: 'Member removed successfully',
+    schema: {
+      properties: {
+        message: { type: 'string', example: 'Membro removido com sucesso do ranking' },
+        removedUserId: { type: 'string', example: 'user-456' },
+        rankingId: { type: 'string', example: 'ranking-123' },
+      },
+      example: {
+        message: 'Membro removido com sucesso do ranking',
+        removedUserId: 'user-456',
+        rankingId: 'ranking-123',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - validation error',
+    schema: { 
+      examples: {
+        notOwner: { 
+          summary: 'Not ranking owner',
+          value: { message: 'Apenas o proprietário do ranking pode remover membros 😔' }
+        },
+        selfRemoval: { 
+          summary: 'Trying to remove self',
+          value: { message: 'Você não pode remover a si mesmo do ranking 😔' }
+        },
+        userNotFound: { 
+          summary: 'User not found in ranking',
+          value: { message: 'Usuário não encontrado no ranking 😔' }
+        },
+      }
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Ranking not found',
+    schema: { example: { message: 'Ranking não encontrado 😔' } },
+  })
+  async removeMemberFromRanking(
+    @Param('rankingId') rankingId: string,
+    @Param('userId') memberId: string,
+    @GetUser() adminId: string,
+  ) {
+    Logger.log(
+      `Removing member ${memberId} from ranking ${rankingId} by admin ${adminId}`,
+      RankingController.name,
+    );
+    return await this.rankingUserService.removeMemberFromRanking(rankingId, memberId, adminId);
   }
 }
