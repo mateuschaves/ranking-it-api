@@ -7,7 +7,7 @@ export class EncryptService {
         return await hash(value, 8);
     }
 
-    async compare(hashed: string, raw: string): Promise<boolean> {
+    async compare(raw: string, hashed: string): Promise<boolean> {
         return await compare(raw, hashed);
     }
 }
