@@ -32,6 +32,7 @@ export class RankingItemRepository {
       const items = await this.prismaService.rankingItem.findMany({
         where: {
           rankingId,
+          deletedAt: null,
         },
         omit: {
           rankingId: true,
@@ -111,9 +112,10 @@ export class RankingItemRepository {
 
   async getRankingItemById(rankingItemId: string) {
     try {
-      return await this.prismaService.rankingItem.findUnique({
+      return await this.prismaService.rankingItem.findFirst({
         where: {
           id: rankingItemId,
+          deletedAt: null,
         },
       });
     } catch (error) {
@@ -127,14 +129,17 @@ export class RankingItemRepository {
 
   async deleteRankingItem(rankingItemId: string) {
     try {
-      return await this.prismaService.rankingItem.delete({
+      return await this.prismaService.rankingItem.update({
         where: {
           id: rankingItemId,
+        },
+        data: {
+          deletedAt: new Date(),
         },
       });
     } catch (error) {
       Logger.error(
-        `Error deleting ranking item ${error}`,
+        `Error soft deleting ranking item ${error}`,
         'RankingRepository.deleteRankingItem',
       );
       throw error;
