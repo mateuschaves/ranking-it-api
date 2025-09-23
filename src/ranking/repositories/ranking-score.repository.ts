@@ -42,6 +42,9 @@ export class RankingScoreRepository {
       const scores = await this.prismaService.rankingItemScore.findMany({
         where: {
           rankingItemId,
+          rankingItem: {
+            deletedAt: null,
+          },
         },
         select: {
           id: true,
@@ -96,6 +99,9 @@ export class RankingScoreRepository {
       return await this.prismaService.rankingItemScore.findMany({
         where: {
           rankingItemId,
+          rankingItem: {
+            deletedAt: null,
+          },
         },
         select: {
           id: true,
@@ -126,6 +132,9 @@ export class RankingScoreRepository {
           rankingItemId,
           userId,
           rankingCriteriaId,
+          rankingItem: {
+            deletedAt: null,
+          },
         },
         select: {
           id: true,
@@ -191,6 +200,9 @@ export class RankingScoreRepository {
         await this.prismaService.rankingItemScore.aggregate({
           where: {
             rankingItemId,
+            rankingItem: {
+              deletedAt: null,
+            },
           },
           _avg: {
             score: true,

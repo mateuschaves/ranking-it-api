@@ -56,6 +56,7 @@ model RankingItem {
   link                 String?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
+  deletedAt            DateTime?
   createdByUser        User                   @relation(fields: [createdById], references: [id])
   ranking              Ranking                @relation(fields: [rankingId], references: [id])
   rankingItemComment   RankingItemComment[]
