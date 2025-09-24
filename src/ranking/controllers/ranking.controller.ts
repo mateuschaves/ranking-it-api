@@ -46,6 +46,7 @@ export class RankingController {
         name: { type: 'string', example: 'Ranking XPTO' },
         description: { type: 'string', example: 'Descrição do ranking' },
         banner: { type: 'string', example: 'https://cdn.com/banner.jpg' },
+        hasGeolocation: { type: 'boolean', example: true },
         createdAt: { type: 'string', format: 'date-time', example: '2024-07-01T12:00:00.000Z' },
       },
       example: {
@@ -53,6 +54,7 @@ export class RankingController {
         name: 'Ranking XPTO',
         description: 'Descrição do ranking',
         banner: 'https://cdn.com/banner.jpg',
+        hasGeolocation: true,
         createdAt: '2024-07-01T12:00:00.000Z',
       },
     },
@@ -301,6 +303,17 @@ export class RankingController {
   @ApiResponse({
     status: 200,
     description: 'Ranking updated successfully',
+    schema: {
+      properties: {
+        id: { type: 'string', example: 'ranking-123' },
+        name: { type: 'string', example: 'Updated Ranking Name' },
+        description: { type: 'string', example: 'Updated description' },
+        hasGeolocation: { type: 'boolean', example: true },
+        ownerId: { type: 'string', example: 'user-123' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
   })
   @ApiResponse({
     status: 404,

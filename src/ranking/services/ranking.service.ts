@@ -27,6 +27,7 @@ export class RankingService {
         name: createRankingDto.name,
         ownerId: owner.id,
         description: createRankingDto.description,
+        hasGeolocation: createRankingDto.hasGeolocation || false,
       });
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -41,8 +42,9 @@ export class RankingService {
     try {
       Logger.log('Validate exist ranking', 'RankingService.updateRanking');
       await this.rankingValidationService.existRanking(rankingId);
-      await this.rankingRepository.updateRanking(rankingId, data);
+      const updatedRanking = await this.rankingRepository.updateRanking(rankingId, data);
       Logger.log('Ranking updated', 'RankingService.updateRanking');
+      return updatedRanking;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;

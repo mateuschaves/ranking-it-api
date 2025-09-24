@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export default class CreateRankingDto {
@@ -28,7 +28,19 @@ export default class CreateRankingDto {
     required: false,
   })
   @IsOptional()
-  readonly photo: string;
+  readonly photo?: string;
+
+  @ApiProperty({
+    description: 'Whether ranking items can have geolocation (latitude/longitude)',
+    example: true,
+    required: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean({
+    message: 'hasGeolocation deve ser um valor booleano',
+  })
+  readonly hasGeolocation?: boolean;
 
   @ApiProperty({
     description: 'Owner ID (automatically set from JWT token)',
