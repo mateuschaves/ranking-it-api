@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export default class UpdateRankingDto {
@@ -14,7 +14,7 @@ export default class UpdateRankingDto {
     message: 'Nome não pode ser vazio 💁',
   })
   @IsOptional()
-  readonly name: string;
+  readonly name?: string;
 
   @ApiProperty({
     description: 'Ranking description',
@@ -22,7 +22,7 @@ export default class UpdateRankingDto {
     required: false,
   })
   @IsOptional()
-  readonly description: string;
+  readonly description?: string;
 
   @ApiProperty({
     description: 'Ranking banner photo',
@@ -30,5 +30,16 @@ export default class UpdateRankingDto {
     required: false,
   })
   @IsOptional()
-  readonly photo: string;
+  readonly photo?: string;
+
+  @ApiProperty({
+    description: 'Whether ranking items can have geolocation (latitude/longitude)',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean({
+    message: 'hasGeolocation deve ser um valor booleano',
+  })
+  readonly hasGeolocation?: boolean;
 }
