@@ -120,6 +120,8 @@ describe('RankingItemService', () => {
         name: 'Test Item',
         description: 'Test Description',
         link: undefined,
+        latitude: null,
+        longitude: null,
         rankingId: 'ranking-id',
         createdById: 'user-id',
       });
@@ -154,6 +156,90 @@ describe('RankingItemService', () => {
         name: 'Test Item',
         description: 'Test Description',
         link: undefined,
+        latitude: null,
+        longitude: null,
+        rankingId: 'ranking-id',
+        createdById: 'user-id',
+      });
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should create a ranking item with geolocation', async () => {
+      const createRankingItemDto: CreateRankingItemDto = {
+        rankingId: 'ranking-id',
+        name: 'Test Item with Location',
+        description: 'Test Description',
+        createdById: 'user-id',
+        latitude: '-23.5505',
+        longitude: '-46.6333',
+        link: 'https://example.com',
+      };
+
+      const expectedResult = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item with Location',
+        description: 'Test Description',
+        createdById: 'user-id',
+        latitude: -23.5505,
+        longitude: -46.6333,
+        link: 'https://example.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRankingValidationsService.existUser.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.createRankingItem.mockResolvedValue(expectedResult);
+
+      const result = await service.createRankingItem(createRankingItemDto);
+
+      expect(rankingValidationsService.existUser).toHaveBeenCalledWith('user-id');
+      expect(rankingValidationsService.existRankingUser).toHaveBeenCalledWith('ranking-id', 'user-id');
+      expect(rankingItemRepository.createRankingItem).toHaveBeenCalledWith({
+        name: 'Test Item with Location',
+        description: 'Test Description',
+        link: 'https://example.com',
+        latitude: -23.5505,
+        longitude: -46.6333,
+        rankingId: 'ranking-id',
+        createdById: 'user-id',
+      });
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should create a ranking item with null geolocation when not provided', async () => {
+      const createRankingItemDto: CreateRankingItemDto = {
+        rankingId: 'ranking-id',
+        name: 'Test Item without Location',
+        description: 'Test Description',
+        createdById: 'user-id',
+      };
+
+      const expectedResult = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item without Location',
+        description: 'Test Description',
+        createdById: 'user-id',
+        latitude: null,
+        longitude: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRankingValidationsService.existUser.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.createRankingItem.mockResolvedValue(expectedResult);
+
+      const result = await service.createRankingItem(createRankingItemDto);
+
+      expect(rankingItemRepository.createRankingItem).toHaveBeenCalledWith({
+        name: 'Test Item without Location',
+        description: 'Test Description',
+        link: undefined,
+        latitude: null,
+        longitude: null,
         rankingId: 'ranking-id',
         createdById: 'user-id',
       });

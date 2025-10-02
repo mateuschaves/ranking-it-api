@@ -34,6 +34,8 @@ export class RankingItemService {
           name: createRankingItemDto.name,
           description: createRankingItemDto.description,
           link: createRankingItemDto.link,
+          latitude: createRankingItemDto.latitude ? parseFloat(createRankingItemDto.latitude) : null,
+          longitude: createRankingItemDto.longitude ? parseFloat(createRankingItemDto.longitude) : null,
           rankingId: createRankingItemDto.rankingId,
           createdById: createRankingItemDto.createdById,
         });
