@@ -245,6 +245,46 @@ describe('RankingItemService', () => {
       });
       expect(result).toEqual(expectedResult);
     });
+
+    it('should create a ranking item with empty string geolocation', async () => {
+      const createRankingItemDto: CreateRankingItemDto = {
+        rankingId: 'ranking-id',
+        name: 'Test Item with Empty Location',
+        description: 'Test Description',
+        createdById: 'user-id',
+        latitude: '',
+        longitude: '',
+      };
+
+      const expectedResult = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item with Empty Location',
+        description: 'Test Description',
+        createdById: 'user-id',
+        latitude: null,
+        longitude: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRankingValidationsService.existUser.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.createRankingItem.mockResolvedValue(expectedResult);
+
+      const result = await service.createRankingItem(createRankingItemDto);
+
+      expect(rankingItemRepository.createRankingItem).toHaveBeenCalledWith({
+        name: 'Test Item with Empty Location',
+        description: 'Test Description',
+        link: undefined,
+        latitude: null,
+        longitude: null,
+        rankingId: 'ranking-id',
+        createdById: 'user-id',
+      });
+      expect(result).toEqual(expectedResult);
+    });
   });
 
   describe('getRankingItems', () => {
@@ -412,11 +452,158 @@ describe('RankingItemService', () => {
       expect(rankingItemRepository.updateRankingItem).toHaveBeenCalled();
     });
 
+    it('should update a ranking item with geolocation', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = {
+        name: 'Updated Item',
+        latitude: '-23.5505',
+        longitude: '-46.6333',
+      } as any;
+
+      const mockItem = {
+        id: rankingItemId,
+        rankingId,
+      } as any;
+
+      const expected = {
+        id: rankingItemId,
+        name: 'Updated Item',
+        latitude: -23.5505,
+        longitude: -46.6333,
+      } as any;
+
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(mockItem);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.updateRankingItem.mockResolvedValue(expected);
+
+      const result = await service.updateRankingItem(
+        rankingId,
+        rankingItemId,
+        userId,
+        updateDto,
+      );
+
+      expect(rankingItemRepository.updateRankingItem).toHaveBeenCalledWith(rankingItemId, {
+        name: 'Updated Item',
+        description: undefined,
+        link: undefined,
+        latitude: -23.5505,
+        longitude: -46.6333,
+      });
+      expect(result).toEqual(expected);
+    });
+
+    it('should update a ranking item with null geolocation when not provided', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = {
+        name: 'Updated Item',
+        description: 'Updated description',
+      } as any;
+
+      const mockItem = {
+        id: rankingItemId,
+        rankingId,
+      } as any;
+
+      const expected = {
+        id: rankingItemId,
+        name: 'Updated Item',
+        description: 'Updated description',
+        latitude: null,
+        longitude: null,
+      } as any;
+
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(mockItem);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.updateRankingItem.mockResolvedValue(expected);
+
+      const result = await service.updateRankingItem(
+        rankingId,
+        rankingItemId,
+        userId,
+        updateDto,
+      );
+
+      expect(rankingItemRepository.updateRankingItem).toHaveBeenCalledWith(rankingItemId, {
+        name: 'Updated Item',
+        description: 'Updated description',
+        link: undefined,
+        latitude: null,
+        longitude: null,
+      });
+      expect(result).toEqual(expected);
+    });
+
+    it('should update a ranking item with empty string geolocation', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = {
+        name: 'Updated Item',
+        latitude: '',
+        longitude: '',
+      } as any;
+
+      const mockItem = {
+        id: rankingItemId,
+        rankingId,
+      } as any;
+
+      const expected = {
+        id: rankingItemId,
+        name: 'Updated Item',
+        latitude: null,
+        longitude: null,
+      } as any;
+
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(mockItem);
+      mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+      mockRankingItemRepository.updateRankingItem.mockResolvedValue(expected);
+
+      const result = await service.updateRankingItem(
+        rankingId,
+        rankingItemId,
+        userId,
+        updateDto,
+      );
+
+      expect(rankingItemRepository.updateRankingItem).toHaveBeenCalledWith(rankingItemId, {
+        name: 'Updated Item',
+        description: undefined,
+        link: undefined,
+        latitude: null,
+        longitude: null,
+      });
+      expect(result).toEqual(expected);
+    });
+
     it('should throw if item not found', async () => {
       mockRankingItemRepository.getRankingItemById.mockResolvedValue(null);
       await expect(
         service.updateRankingItem('ranking-id', 'item-id', 'user-id', {} as any),
       ).rejects.toThrow('Item do ranking não encontrado 😔');
+    });
+
+    it('should throw if item does not belong to ranking', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const userId = 'user-id';
+      const updateDto = { name: 'Updated' } as any;
+
+      const mockItem = {
+        id: rankingItemId,
+        rankingId: 'different-ranking-id',
+      } as any;
+
+      mockRankingItemRepository.getRankingItemById.mockResolvedValue(mockItem);
+
+      await expect(
+        service.updateRankingItem(rankingId, rankingItemId, userId, updateDto),
+      ).rejects.toThrow('Item não pertence a este ranking 😔');
     });
 
     it('should sync photos: add new and remove missing', async () => {

@@ -3,16 +3,34 @@ import { ExpoPushService } from './expo-push.service';
 import { Expo } from 'expo-server-sdk';
 
 // Mock expo-server-sdk
-jest.mock('expo-server-sdk', () => ({
-  Expo: jest.fn().mockImplementation(() => ({
-    isExpoPushToken: jest.fn(),
-    sendPushNotificationsAsync: jest.fn(),
-  })),
-}));
+jest.mock('expo-server-sdk', () => {
+  const mockIsExpoPushToken = jest.fn();
+  const mockSendPushNotificationsAsync = jest.fn();
+  const mockChunkPushNotifications = jest.fn();
+
+  return {
+    Expo: Object.assign(
+      jest.fn().mockImplementation(() => ({
+        sendPushNotificationsAsync: mockSendPushNotificationsAsync,
+        getPushNotificationReceiptsAsync: jest.fn(),
+        chunkPushNotifications: mockChunkPushNotifications,
+        chunkPushNotificationReceiptIds: jest.fn(),
+      })),
+      {
+        isExpoPushToken: mockIsExpoPushToken,
+      },
+    ),
+    mockIsExpoPushToken,
+    mockSendPushNotificationsAsync,
+    mockChunkPushNotifications,
+  };
+});
 
 describe('ExpoPushService', () => {
   let service: ExpoPushService;
-  let mockExpo: jest.Mocked<Expo>;
+  let mockIsExpoPushToken: jest.Mock;
+  let mockSendPushNotificationsAsync: jest.Mock;
+  let mockChunkPushNotifications: jest.Mock;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -20,7 +38,12 @@ describe('ExpoPushService', () => {
     }).compile();
 
     service = module.get<ExpoPushService>(ExpoPushService);
-    mockExpo = service['expo'] as jest.Mocked<Expo>;
+    
+    // Get the mocked functions from the module
+    const expoModule = await import('expo-server-sdk');
+    mockIsExpoPushToken = (expoModule as any).mockIsExpoPushToken;
+    mockSendPushNotificationsAsync = (expoModule as any).mockSendPushNotificationsAsync;
+    mockChunkPushNotifications = (expoModule as any).mockChunkPushNotifications;
   });
 
   afterEach(() => {
@@ -37,13 +60,13 @@ describe('ExpoPushService', () => {
       const title = 'Test Title';
       const body = 'Test Body';
 
-      mockExpo.isExpoPushToken.mockReturnValue(true);
-      mockExpo.sendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }] as any);
+      mockIsExpoPushToken.mockReturnValue(true);
+      mockSendPushNotificationsAsync.mockResolvedValue([{ status: 'ok' }] as any);
 
       await service.sendPushNotification(expoPushToken, title, body);
 
-      expect(mockExpo.isExpoPushToken).toHaveBeenCalledWith(expoPushToken);
-      expect(mockExpo.sendPushNotificationsAsync).toHaveBeenCalledWith([
+      expect(mockIsExpoPushToken).toHaveBeenCalledWith(expoPushToken);
+      expect(mockSendPushNotificationsAsync).toHaveBeenCalledWith([
         {
           to: expoPushToken,
           sound: 'default',
@@ -58,12 +81,12 @@ describe('ExpoPushService', () => {
       const title = 'Test Title';
       const body = 'Test Body';
 
-      mockExpo.isExpoPushToken.mockReturnValue(false);
+      mockIsExpoPushToken.mockReturnValue(false);
 
       await service.sendPushNotification(expoPushToken, title, body);
 
-      expect(mockExpo.isExpoPushToken).toHaveBeenCalledWith(expoPushToken);
-      expect(mockExpo.sendPushNotificationsAsync).not.toHaveBeenCalled();
+      expect(mockIsExpoPushToken).toHaveBeenCalledWith(expoPushToken);
+      expect(mockSendPushNotificationsAsync).not.toHaveBeenCalled();
     });
 
     it('should handle send notification errors', async () => {
@@ -72,8 +95,8 @@ describe('ExpoPushService', () => {
       const body = 'Test Body';
       const error = new Error('Push notification failed');
 
-      mockExpo.isExpoPushToken.mockReturnValue(true);
-      mockExpo.sendPushNotificationsAsync.mockRejectedValue(error);
+      mockIsExpoPushToken.mockReturnValue(true);
+      mockSendPushNotificationsAsync.mockRejectedValue(error);
 
       // Should not throw error, just log it
       await expect(service.sendPushNotification(expoPushToken, title, body)).resolves.toBeUndefined();
@@ -89,15 +112,31 @@ describe('ExpoPushService', () => {
       const title = 'Test Title';
       const body = 'Test Body';
 
-      mockExpo.isExpoPushToken.mockReturnValue(true);
-      mockExpo.sendPushNotificationsAsync.mockResolvedValue([
+      mockIsExpoPushToken.mockReturnValue(true);
+      mockChunkPushNotifications.mockReturnValue([
+        [
+          {
+            to: expoPushTokens[0],
+            sound: 'default',
+            title,
+            body,
+          },
+          {
+            to: expoPushTokens[1],
+            sound: 'default',
+            title,
+            body,
+          },
+        ],
+      ]);
+      mockSendPushNotificationsAsync.mockResolvedValue([
         { status: 'ok' },
         { status: 'ok' },
       ] as any);
 
       await service.sendBulkPushNotifications(expoPushTokens, title, body);
 
-      expect(mockExpo.sendPushNotificationsAsync).toHaveBeenCalledWith([
+      expect(mockSendPushNotificationsAsync).toHaveBeenCalledWith([
         {
           to: expoPushTokens[0],
           sound: 'default',
@@ -122,18 +161,34 @@ describe('ExpoPushService', () => {
       const title = 'Test Title';
       const body = 'Test Body';
 
-      mockExpo.isExpoPushToken
+      mockIsExpoPushToken
         .mockReturnValueOnce(true)
         .mockReturnValueOnce(false)
         .mockReturnValueOnce(true);
-      mockExpo.sendPushNotificationsAsync.mockResolvedValue([
+      mockChunkPushNotifications.mockReturnValue([
+        [
+          {
+            to: expoPushTokens[0],
+            sound: 'default',
+            title,
+            body,
+          },
+          {
+            to: expoPushTokens[2],
+            sound: 'default',
+            title,
+            body,
+          },
+        ],
+      ]);
+      mockSendPushNotificationsAsync.mockResolvedValue([
         { status: 'ok' },
         { status: 'ok' },
       ] as any);
 
       await service.sendBulkPushNotifications(expoPushTokens, title, body);
 
-      expect(mockExpo.sendPushNotificationsAsync).toHaveBeenCalledWith([
+      expect(mockSendPushNotificationsAsync).toHaveBeenCalledWith([
         {
           to: expoPushTokens[0],
           sound: 'default',
@@ -156,7 +211,7 @@ describe('ExpoPushService', () => {
 
       await service.sendBulkPushNotifications(expoPushTokens, title, body);
 
-      expect(mockExpo.sendPushNotificationsAsync).not.toHaveBeenCalled();
+      expect(mockSendPushNotificationsAsync).not.toHaveBeenCalled();
     });
 
     it('should handle send bulk notification errors', async () => {
@@ -165,8 +220,8 @@ describe('ExpoPushService', () => {
       const body = 'Test Body';
       const error = new Error('Bulk push notification failed');
 
-      mockExpo.isExpoPushToken.mockReturnValue(true);
-      mockExpo.sendPushNotificationsAsync.mockRejectedValue(error);
+      mockIsExpoPushToken.mockReturnValue(true);
+      mockSendPushNotificationsAsync.mockRejectedValue(error);
 
       // Should not throw error, just log it
       await expect(service.sendBulkPushNotifications(expoPushTokens, title, body)).resolves.toBeUndefined();
