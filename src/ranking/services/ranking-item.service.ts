@@ -162,8 +162,8 @@ export class RankingItemService {
           name: updateDto.name,
           description: updateDto.description,
           link: updateDto.link,
-          latitude: updateDto.latitude as unknown as number,
-          longitude: updateDto.longitude as unknown as number,
+          latitude: updateDto.latitude ? parseFloat(updateDto.latitude) : null,
+          longitude: updateDto.longitude ? parseFloat(updateDto.longitude) : null,
         },
       );
 

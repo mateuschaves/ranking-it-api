@@ -3,6 +3,8 @@ import { RankingValidationsService } from './ranking-validations.service';
 import { UserRepository } from '../../user/repositories/user.repository';
 import { RankingRepository } from '../repositories/ranking.repository';
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
+import { RankingItemRepository } from '../repositories/ranking-item.repository';
+import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 import { BadRequestException } from '@nestjs/common';
 
 describe('RankingValidationsService', () => {
@@ -10,6 +12,8 @@ describe('RankingValidationsService', () => {
   let userRepository: jest.Mocked<UserRepository>;
   let rankingRepository: jest.Mocked<RankingRepository>;
   let rankingUserRepository: jest.Mocked<RankingUserRepository>;
+  let rankingItemRepository: jest.Mocked<RankingItemRepository>;
+  let rankingScoreRepository: jest.Mocked<RankingScoreRepository>;
 
   beforeEach(async () => {
     const mockUserRepository = {
@@ -21,7 +25,17 @@ describe('RankingValidationsService', () => {
     };
 
     const mockRankingUserRepository = {
-      getRankingUsers: jest.fn(),
+      getRankingUserById: jest.fn(),
+    };
+
+    const mockRankingItemRepository = {
+      getRankingItemById: jest.fn(),
+    };
+
+    const mockRankingScoreRepository = {
+      getRankingScoreByItemId: jest.fn(),
+      getRankingScoreCriteriaByUserId: jest.fn(),
+      getRankingCriteriaById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -39,6 +53,14 @@ describe('RankingValidationsService', () => {
           provide: RankingUserRepository,
           useValue: mockRankingUserRepository,
         },
+        {
+          provide: RankingItemRepository,
+          useValue: mockRankingItemRepository,
+        },
+        {
+          provide: RankingScoreRepository,
+          useValue: mockRankingScoreRepository,
+        },
       ],
     }).compile();
 
@@ -46,6 +68,8 @@ describe('RankingValidationsService', () => {
     userRepository = module.get(UserRepository);
     rankingRepository = module.get(RankingRepository);
     rankingUserRepository = module.get(RankingUserRepository);
+    rankingItemRepository = module.get(RankingItemRepository);
+    rankingScoreRepository = module.get(RankingScoreRepository);
   });
 
   it('should be defined', () => {
@@ -75,7 +99,7 @@ describe('RankingValidationsService', () => {
       userRepository.findOne.mockResolvedValue(null);
 
       await expect(service.existUser(userId)).rejects.toThrow(
-        new BadRequestException('Usuário não encontrado 🕵️‍♂️'),
+        new BadRequestException('Você não tem permissão para acessar esse recurso 😳'),
       );
     });
   });
@@ -103,39 +127,37 @@ describe('RankingValidationsService', () => {
       rankingRepository.getRankingById.mockResolvedValue(null);
 
       await expect(service.existRanking(rankingId)).rejects.toThrow(
-        new BadRequestException('Ranking não encontrado 🕵️‍♂️'),
+        new BadRequestException('Ranking não encontrado 😔'),
       );
     });
   });
 
   describe('existRankingUser', () => {
-    it('should return ranking users when user is part of ranking', async () => {
+    it('should return ranking user when user is part of ranking', async () => {
       const rankingId = 'ranking-123';
       const userId = 'user-123';
-      const mockRankingUsers = [
-        {
-          id: 'user-ranking-123',
-          userId: 'user-123',
-          rankingId: 'ranking-123',
-        },
-      ];
+      const mockRankingUser = {
+        id: 'ranking-123',
+        name: 'Test Ranking',
+        ownerId: 'user-123',
+      };
 
-      rankingUserRepository.getRankingUsers.mockResolvedValue(mockRankingUsers as any);
+      rankingUserRepository.getRankingUserById.mockResolvedValue(mockRankingUser as any);
 
       const result = await service.existRankingUser(rankingId, userId);
 
-      expect(rankingUserRepository.getRankingUsers).toHaveBeenCalledWith(rankingId);
-      expect(result).toEqual(mockRankingUsers);
+      expect(rankingUserRepository.getRankingUserById).toHaveBeenCalledWith(rankingId, userId);
+      expect(result).toEqual(mockRankingUser);
     });
 
     it('should throw BadRequestException when user is not part of ranking', async () => {
       const rankingId = 'ranking-123';
       const userId = 'user-123';
 
-      rankingUserRepository.getRankingUsers.mockResolvedValue([]);
+      rankingUserRepository.getRankingUserById.mockResolvedValue(null);
 
       await expect(service.existRankingUser(rankingId, userId)).rejects.toThrow(
-        new BadRequestException('Usuário não faz parte do ranking 🕵️‍♂️'),
+        new BadRequestException('Você não tem permissão para acessar esse recurso 😳'),
       );
     });
   });
