@@ -38,9 +38,6 @@ export default class CreateRankingItemDto {
   readonly latitude?: string;
 
   @IsOptional()
-  @IsString({
-    message: 'Longitude deve ser uma string 🙈',
-  })
   @IsLongitude({
     message: 'Longitude deve estar entre -180 e 180 graus 🙈',
   })
