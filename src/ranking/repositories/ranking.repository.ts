@@ -8,9 +8,10 @@ export class RankingRepository {
 
   async getRankingById(rankingId: string) {
     try {
-      return await this.prismaService.ranking.findUnique({
+      return await this.prismaService.ranking.findFirst({
         where: {
           id: rankingId,
+          deletedAt: null,
         },
       });
     } catch (error) {
@@ -105,6 +106,25 @@ export class RankingRepository {
       Logger.error(
         `Error removing ranking criteria ${error}`,
         'RankingRepository.removeRankingCriteria',
+      );
+      throw error;
+    }
+  }
+
+  async deleteRanking(rankingId: string) {
+    try {
+      return await this.prismaService.ranking.update({
+        where: {
+          id: rankingId,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `Error soft deleting ranking ${error}`,
+        'RankingRepository.deleteRanking',
       );
       throw error;
     }

@@ -494,4 +494,50 @@ export class RankingController {
     );
     return await this.rankingUserService.removeMemberFromRanking(rankingId, memberId, adminId);
   }
+
+  @Delete(':rankingId')
+  @ApiOperation({ summary: 'Delete a ranking (soft delete)' })
+  @ApiParam({ name: 'rankingId', description: 'ID of the ranking to delete' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranking deleted successfully',
+    schema: {
+      properties: {
+        id: { type: 'string', example: 'ranking-123' },
+        name: { type: 'string', example: 'Deleted Ranking' },
+        deletedAt: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00.000Z' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - validation error',
+    schema: { 
+      examples: {
+        notFound: { 
+          summary: 'Ranking not found',
+          value: { message: 'Ranking não encontrado 😔' }
+        },
+        noPermission: { 
+          summary: 'No permission to delete',
+          value: { message: 'Você não tem permissão para acessar esse recurso 😳' }
+        },
+      }
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Ranking not found',
+    schema: { example: { message: 'Ranking não encontrado 😔' } },
+  })
+  async deleteRanking(
+    @Param('rankingId') rankingId: string,
+    @GetUser() userId: string,
+  ) {
+    Logger.log(
+      `Deleting ranking ${rankingId} by user ${userId}`,
+      RankingController.name,
+    );
+    return await this.rankingService.deleteRanking(rankingId, userId);
+  }
 }

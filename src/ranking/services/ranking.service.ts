@@ -165,4 +165,22 @@ export class RankingService {
       throw new BadRequestException('Erro ao remover critérios do ranking ☹️');
     }
   }
+
+  async deleteRanking(rankingId: string, userId: string) {
+    try {
+      Logger.log(
+        'Validate exist ranking and user permissions',
+        'RankingService.deleteRanking',
+      );
+      await this.rankingValidationService.existRanking(rankingId);
+      await this.rankingValidationService.existRankingUser(rankingId, userId);
+
+      return await this.rankingRepository.deleteRanking(rankingId);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Erro ao deletar ranking ☹️');
+    }
+  }
 }
