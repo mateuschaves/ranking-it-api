@@ -22,6 +22,7 @@ describe('RankingService', () => {
       getRankingCriteria: jest.fn(),
       createRankingCriteria: jest.fn(),
       removeRankingCriteria: jest.fn(),
+      deleteRanking: jest.fn(),
     };
 
     const mockRankingValidationService = {
@@ -272,6 +273,77 @@ describe('RankingService', () => {
       );
 
       await expect(service.updateRanking(rankingId, updateData)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('deleteRanking', () => {
+    it('should delete a ranking successfully', async () => {
+      const rankingId = 'ranking-123';
+      const userId = 'user-123';
+      const deletedAt = new Date();
+
+      const mockDeletedRanking = {
+        id: 'ranking-123',
+        name: 'Deleted Ranking',
+        description: 'Deleted Description',
+        hasGeolocation: true,
+        ownerId: 'user-123',
+        bannerId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt,
+      };
+
+      rankingValidationService.existRanking.mockResolvedValue(undefined as any);
+      rankingValidationService.existRankingUser.mockResolvedValue(undefined as any);
+      rankingRepository.deleteRanking.mockResolvedValue(mockDeletedRanking as any);
+
+      const result = await service.deleteRanking(rankingId, userId);
+
+      expect(rankingValidationService.existRanking).toHaveBeenCalledWith(rankingId);
+      expect(rankingValidationService.existRankingUser).toHaveBeenCalledWith(rankingId, userId);
+      expect(rankingRepository.deleteRanking).toHaveBeenCalledWith(rankingId);
+      expect(result).toEqual(mockDeletedRanking);
+    });
+
+    it('should throw BadRequestException when ranking does not exist', async () => {
+      const rankingId = 'ranking-123';
+      const userId = 'user-123';
+
+      rankingValidationService.existRanking.mockRejectedValue(
+        new BadRequestException('Ranking não encontrado 😔'),
+      );
+
+      await expect(service.deleteRanking(rankingId, userId)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when user is not part of ranking', async () => {
+      const rankingId = 'ranking-123';
+      const userId = 'user-123';
+
+      rankingValidationService.existRanking.mockResolvedValue(undefined as any);
+      rankingValidationService.existRankingUser.mockRejectedValue(
+        new BadRequestException('Você não tem permissão para acessar esse recurso 😳'),
+      );
+
+      await expect(service.deleteRanking(rankingId, userId)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when repository fails', async () => {
+      const rankingId = 'ranking-123';
+      const userId = 'user-123';
+
+      rankingValidationService.existRanking.mockResolvedValue(undefined as any);
+      rankingValidationService.existRankingUser.mockResolvedValue(undefined as any);
+      rankingRepository.deleteRanking.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.deleteRanking(rankingId, userId)).rejects.toThrow(
         BadRequestException,
       );
     });

@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, IsNumberString, IsLatitude, IsLongitude } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, IsLatitude, IsLongitude } from 'class-validator';
 
 export default class CreateRankingItemDto {
   rankingId: string;
