@@ -11,6 +11,7 @@ export class RankingUserRepository {
     try {
       const rankings = await this.prismaService.ranking.findMany({
         where: {
+          deletedAt: null,
           userRanking: {
             some: {
               userId,
@@ -248,6 +249,7 @@ export class RankingUserRepository {
       return await this.prismaService.ranking.findUnique({
         where: {
           id: rankingId,
+          deletedAt: null,
           userRanking: {
             some: {
               userId,
@@ -331,7 +333,10 @@ export class RankingUserRepository {
   async isRankingOwner(rankingId: string, userId: string) {
     try {
       const ranking = await this.prismaService.ranking.findUnique({
-        where: { id: rankingId },
+        where: { 
+          id: rankingId,
+          deletedAt: null,
+        },
         select: { ownerId: true },
       });
 
@@ -348,7 +353,10 @@ export class RankingUserRepository {
   async getRankingDetails(rankingId: string) {
     try {
       const ranking = await this.prismaService.ranking.findUnique({
-        where: { id: rankingId },
+        where: { 
+          id: rankingId,
+          deletedAt: null,
+        },
         include: {
           owner: {
             select: {
