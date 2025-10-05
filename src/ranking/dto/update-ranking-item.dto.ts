@@ -26,30 +26,12 @@ export default class UpdateRankingItemDto {
   readonly link?: string;
 
   @IsOptional()
-  @IsString({
-    message: 'Latitude deve ser uma string 🙈',
-  })
-  @IsNumberString(
-    {},
-    {
-      message: 'Latitude deve ser um número válido 🙈',
-    },
-  )
   @IsLatitude({
     message: 'Latitude deve estar entre -90 e 90 graus 🙈',
   })
   readonly latitude?: string;
 
   @IsOptional()
-  @IsString({
-    message: 'Longitude deve ser uma string 🙈',
-  })
-  @IsNumberString(
-    {},
-    {
-      message: 'Longitude deve ser um número válido 🙈',
-    },
-  )
   @IsLongitude({
     message: 'Longitude deve estar entre -180 e 180 graus 🙈',
   })
