@@ -91,7 +91,7 @@ model RankingItemScore {
   id                String          @id @default(cuid())
   rankingItemId     String
   userId            String
-  score             Int
+  score             Float
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   rankingCriteriaId String
