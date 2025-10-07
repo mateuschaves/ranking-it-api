@@ -6,6 +6,7 @@ import CreateRankingItemScoreDto from '../dto/create-ranking-item-score.dto';
 import CreateMultipleRankingItemScoresDto from '../dto/create-multiple-ranking-item-scores.dto';
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
 import { ExpoPushService } from 'src/shared/services/expo-push.service';
+import { UserRepository } from 'src/user/repositories/user.repository';
 
 describe('RankingScoreService', () => {
   let service: RankingScoreService;
@@ -13,6 +14,7 @@ describe('RankingScoreService', () => {
   let rankingValidationsService: RankingValidationsService;
   let rankingUserRepository: RankingUserRepository;
   let expoPushService: ExpoPushService;
+  let userRepository: UserRepository;
 
   const mockRankingScoreRepository = {
     createRankingScore: jest.fn(),
@@ -21,6 +23,8 @@ describe('RankingScoreService', () => {
     updateRankingScore: jest.fn(),
     deleteRankingScore: jest.fn(),
     getAvgRankingItemScore: jest.fn(),
+    createMultipleRankingScores: jest.fn(),
+    updateMultipleRankingScores: jest.fn(),
   };
 
   const mockRankingValidationsService = {
@@ -35,6 +39,10 @@ describe('RankingScoreService', () => {
 
   const mockExpoPushService = {
     sendBulkPushNotifications: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockUserRepository = {
+    findOne: jest.fn().mockResolvedValue({ id: 'user-123', name: 'Test User' }),
   };
 
   beforeEach(async () => {
@@ -57,6 +65,10 @@ describe('RankingScoreService', () => {
           provide: ExpoPushService,
           useValue: mockExpoPushService,
         },
+        {
+          provide: UserRepository,
+          useValue: mockUserRepository,
+        },
       ],
     }).compile();
 
@@ -65,6 +77,7 @@ describe('RankingScoreService', () => {
     rankingValidationsService = module.get<RankingValidationsService>(RankingValidationsService);
     rankingUserRepository = module.get<RankingUserRepository>(RankingUserRepository);
     expoPushService = module.get<ExpoPushService>(ExpoPushService);
+    userRepository = module.get<UserRepository>(UserRepository);
   });
 
   afterEach(() => {
@@ -282,9 +295,7 @@ describe('RankingScoreService', () => {
       mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
       mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
       mockRankingValidationsService.existRankingItemCriteriaScore.mockResolvedValue(null);
-      mockRankingScoreRepository.createRankingScore.mockResolvedValueOnce(mockCreatedScores[0]);
-      mockRankingScoreRepository.createRankingScore.mockResolvedValueOnce(mockCreatedScores[1]);
-      mockRankingScoreRepository.createRankingScore.mockResolvedValueOnce(mockCreatedScores[2]);
+      mockRankingScoreRepository.createMultipleRankingScores.mockResolvedValue({ count: 3 });
 
       const result = await service.createMultipleRankingScores(createMultipleScoresDto);
 
@@ -293,7 +304,7 @@ describe('RankingScoreService', () => {
       expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledWith('criteria-1');
       expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledWith('criteria-2');
       expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledWith('criteria-3');
-      expect(rankingScoreRepository.createRankingScore).toHaveBeenCalledTimes(3);
+      expect(rankingScoreRepository.createMultipleRankingScores).toHaveBeenCalledTimes(1);
       expect(result.message).toBe('3 score(s) processado(s) com sucesso');
       expect(result.summary.created).toBe(3);
       expect(result.summary.updated).toBe(0);
@@ -346,18 +357,13 @@ describe('RankingScoreService', () => {
       mockRankingValidationsService.existRankingItemCriteriaScore
         .mockResolvedValueOnce(existingScore) // First score exists
         .mockResolvedValueOnce(null); // Second score doesn't exist
-      mockRankingScoreRepository.updateRankingScore.mockResolvedValue(mockUpdatedScore);
-      mockRankingScoreRepository.createRankingScore.mockResolvedValue(mockCreatedScore);
+      mockRankingScoreRepository.updateMultipleRankingScores.mockResolvedValue([mockUpdatedScore]);
+      mockRankingScoreRepository.createMultipleRankingScores.mockResolvedValue({ count: 1 });
 
       const result = await service.createMultipleRankingScores(createMultipleScoresDto);
 
-      expect(rankingScoreRepository.updateRankingScore).toHaveBeenCalledWith('existing-score-id', { score: 8.5 });
-      expect(rankingScoreRepository.createRankingScore).toHaveBeenCalledWith({
-        userId: 'user-id',
-        score: 9.0,
-        rankingItemId: 'item-id',
-        rankingCriteriaId: 'criteria-2',
-      });
+      expect(rankingScoreRepository.updateMultipleRankingScores).toHaveBeenCalledTimes(1);
+      expect(rankingScoreRepository.createMultipleRankingScores).toHaveBeenCalledTimes(1);
       expect(result.summary.created).toBe(1);
       expect(result.summary.updated).toBe(1);
       expect(result.summary.total).toBe(2);
@@ -391,16 +397,17 @@ describe('RankingScoreService', () => {
       mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
       mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
       mockRankingValidationsService.existRankingItemCriteriaScore.mockResolvedValue(null);
-      mockRankingScoreRepository.createRankingScore.mockResolvedValue(mockCreatedScore);
+      mockRankingScoreRepository.createMultipleRankingScores.mockResolvedValue({ count: 1 });
       mockRankingUserRepository.getRankingUsersPushTokens.mockResolvedValue(['token1', 'token2']);
 
       await service.createMultipleRankingScores(createMultipleScoresDto);
 
       expect(rankingUserRepository.getRankingUsersPushTokens).toHaveBeenCalledWith('ranking-id', 'user-id');
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: 'user-id' });
       expect(expoPushService.sendBulkPushNotifications).toHaveBeenCalledWith(
         ['token1', 'token2'],
         'Item avaliado 📝',
-        'Um item do ranking foi completamente avaliado.',
+        'Um item do ranking foi avaliado por Test User.',
       );
     });
 
@@ -432,7 +439,7 @@ describe('RankingScoreService', () => {
       mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
       mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
       mockRankingValidationsService.existRankingItemCriteriaScore.mockResolvedValue(null);
-      mockRankingScoreRepository.createRankingScore.mockResolvedValue(mockCreatedScore);
+      mockRankingScoreRepository.createMultipleRankingScores.mockResolvedValue({ count: 1 });
       mockRankingUserRepository.getRankingUsersPushTokens.mockRejectedValue(new Error('Push error'));
 
       // Should not throw error even if push notification fails

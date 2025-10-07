@@ -5,6 +5,7 @@ import CreateRankingItemScoreDto from '../dto/create-ranking-item-score.dto';
 import CreateMultipleRankingItemScoresDto, { ScoreDto } from '../dto/create-multiple-ranking-item-scores.dto';
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
 import { ExpoPushService } from 'src/shared/services/expo-push.service';
+import { UserRepository } from 'src/user/repositories/user.repository';
 
 type ScoreResult = {
   action: 'created' | 'updated';
@@ -24,6 +25,7 @@ export class RankingScoreService {
     private readonly rankingValidationsService: RankingValidationsService,
     private readonly rankingUserRepository: RankingUserRepository,
     private readonly expoPushService: ExpoPushService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async createRankingScore(createRankingScoreDto: CreateRankingItemScoreDto) {
@@ -300,12 +302,14 @@ export class RankingScoreService {
         rankingId,
         userId,
       );
+
+      const user = await this.userRepository.findOne({ id: userId });
       
       if (tokens?.length > 0) {
         await this.expoPushService.sendBulkPushNotifications(
           tokens,
           'Item avaliado 📝',
-          'Um item do ranking foi completamente avaliado.',
+          `Um item do ranking foi avaliado por ${user?.name || 'um usuário'}.`,
         );
       }
     } catch {
