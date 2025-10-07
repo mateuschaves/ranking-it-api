@@ -190,12 +190,80 @@ export class RankingScoreService {
     userId: string, 
     scores: ScoreDto[]
   ): Promise<ScoreResult[]> {
-    // Processar todos os scores em paralelo para melhor performance
-    const scorePromises = scores.map(scoreData => 
-      this.processSingleScore(rankingItemId, userId, scoreData)
-    );
+    // Separar scores em novos e existentes
+    const existingScoresMap = new Map<string, { id: string; score: number }>();
+    const newScores: Array<{ rankingCriteriaId: string; score: number }> = [];
 
-    return Promise.all(scorePromises);
+    // Verificar quais scores já existem
+    for (const scoreData of scores) {
+      const existingScore = await this.rankingValidationsService.existRankingItemCriteriaScore(
+        rankingItemId,
+        userId,
+        scoreData.rankingCriteriaId,
+      );
+
+      if (existingScore?.id) {
+        existingScoresMap.set(scoreData.rankingCriteriaId, {
+          id: existingScore.id,
+          score: scoreData.score,
+        });
+      } else {
+        newScores.push({
+          rankingCriteriaId: scoreData.rankingCriteriaId,
+          score: scoreData.score,
+        });
+      }
+    }
+
+    const results: ScoreResult[] = [];
+
+    // Criar novos scores em lote
+    if (newScores.length > 0) {
+      const createData = newScores.map(score => ({
+        userId,
+        score: score.score,
+        rankingItemId,
+        rankingCriteriaId: score.rankingCriteriaId,
+      }));
+
+      const createdCount = await this.rankingScoreRepository.createMultipleRankingScores(createData);
+      
+      // Simular resultados para novos scores (createMany não retorna os objetos criados)
+      for (const score of newScores) {
+        results.push({
+          id: `new-${score.rankingCriteriaId}`, // Placeholder ID
+          rankingItemId,
+          userId,
+          rankingCriteriaId: score.rankingCriteriaId,
+          score: score.score,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          action: 'created',
+        });
+      }
+    }
+
+    // Atualizar scores existentes em lote
+    if (existingScoresMap.size > 0) {
+      const updates = Array.from(existingScoresMap.values());
+      const updatedScores = await this.rankingScoreRepository.updateMultipleRankingScores(updates);
+      
+      // Adicionar resultados para scores atualizados
+      for (const [criteriaId, update] of existingScoresMap) {
+        results.push({
+          id: update.id,
+          rankingItemId,
+          userId,
+          rankingCriteriaId: criteriaId,
+          score: update.score,
+          createdAt: new Date(), // Placeholder
+          updatedAt: new Date(),
+          action: 'updated',
+        });
+      }
+    }
+
+    return results;
   }
 
   private async processSingleScore(

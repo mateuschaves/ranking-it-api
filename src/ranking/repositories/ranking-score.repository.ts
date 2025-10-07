@@ -9,6 +9,7 @@ export class RankingScoreRepository {
 
   async createRankingScore(data: Prisma.RankingItemScoreUncheckedCreateInput) {
     try {
+      Logger.log('Creating ranking score', { data });
       return await this.prismaService.rankingItemScore.create({
         data,
       });
@@ -16,6 +17,44 @@ export class RankingScoreRepository {
       Logger.error(
         `Error creating ranking score ${error}`,
         'RankingRepository.createRankingScore',
+      );
+      throw error;
+    }
+  }
+
+  async createMultipleRankingScores(data: Prisma.RankingItemScoreUncheckedCreateInput[]) {
+    try {
+      Logger.log('Creating multiple ranking scores', { count: data.length });
+      return await this.prismaService.rankingItemScore.createMany({
+        data,
+        skipDuplicates: true, // Skip duplicates instead of throwing error
+      });
+    } catch (error) {
+      Logger.error(
+        `Error creating multiple ranking scores ${error}`,
+        'RankingRepository.createMultipleRankingScores',
+      );
+      throw error;
+    }
+  }
+
+  async updateMultipleRankingScores(updates: Array<{ id: string; score: number }>) {
+    try {
+      Logger.log('Updating multiple ranking scores', { count: updates.length });
+      
+      // Use transaction to update multiple scores
+      return await this.prismaService.$transaction(
+        updates.map(update =>
+          this.prismaService.rankingItemScore.update({
+            where: { id: update.id },
+            data: { score: update.score },
+          })
+        )
+      );
+    } catch (error) {
+      Logger.error(
+        `Error updating multiple ranking scores ${error}`,
+        'RankingRepository.updateMultipleRankingScores',
       );
       throw error;
     }
