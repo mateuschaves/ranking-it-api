@@ -11,7 +11,7 @@ export class ScoreDto {
     message: 'Pontuação não pode ser vazia 💁',
   })
   @IsNumber(
-    {},
+    { allowInfinity: false, allowNaN: false },
     {
       message: 'Pontuação precisa ser um número 🤷',
     },
