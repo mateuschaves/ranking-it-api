@@ -3,6 +3,7 @@ import { RankingScoreController } from './ranking-score.controller';
 import { RankingScoreService } from '../services/ranking-score.service';
 import { AuthGuard } from '@nestjs/passport';
 import CreateRankingItemScoreDto from '../dto/create-ranking-item-score.dto';
+import CreateMultipleRankingItemScoresDto from '../dto/create-multiple-ranking-item-scores.dto';
 
 describe('RankingScoreController', () => {
   let controller: RankingScoreController;
@@ -11,6 +12,7 @@ describe('RankingScoreController', () => {
   const mockRankingScoreService = {
     createRankingScore: jest.fn(),
     getRankingItemScores: jest.fn(),
+    createMultipleRankingScores: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -110,6 +112,104 @@ describe('RankingScoreController', () => {
       const result = await controller.getRankingScores(rankingId, rankingItemId);
 
       expect(service.getRankingItemScores).toHaveBeenCalledWith(rankingItemId);
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('createMultipleRankingScores', () => {
+    it('should create multiple ranking scores', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'criteria-1', score: 8.5 },
+          { rankingCriteriaId: 'criteria-2', score: 9.0 },
+        ],
+      };
+
+      const expectedResult = {
+        message: '2 score(s) processado(s) com sucesso',
+        results: [
+          {
+            id: 'score-1',
+            rankingItemId: 'item-id',
+            userId: 'user-id',
+            rankingCriteriaId: 'criteria-1',
+            score: 8.5,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            action: 'created',
+          },
+          {
+            id: 'score-2',
+            rankingItemId: 'item-id',
+            userId: 'user-id',
+            rankingCriteriaId: 'criteria-2',
+            score: 9.0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            action: 'updated',
+          },
+        ],
+        summary: {
+          created: 1,
+          updated: 1,
+          total: 2,
+        },
+      };
+
+      mockRankingScoreService.createMultipleRankingScores.mockResolvedValue(expectedResult);
+
+      const result = await controller.createMultipleRankingScores(
+        rankingId,
+        rankingItemId,
+        createMultipleScoresDto,
+        'user-id'
+      );
+
+      expect(service.createMultipleRankingScores).toHaveBeenCalledWith({
+        ...createMultipleScoresDto,
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+      });
+      expect(result).toEqual(expectedResult);
+    });
+
+    it('should handle empty scores array', async () => {
+      const rankingId = 'ranking-id';
+      const rankingItemId = 'item-id';
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [],
+      };
+
+      const expectedResult = {
+        message: '0 score(s) processado(s) com sucesso',
+        results: [],
+        summary: {
+          created: 0,
+          updated: 0,
+          total: 0,
+        },
+      };
+
+      mockRankingScoreService.createMultipleRankingScores.mockResolvedValue(expectedResult);
+
+      const result = await controller.createMultipleRankingScores(
+        rankingId,
+        rankingItemId,
+        createMultipleScoresDto,
+        'user-id'
+      );
+
+      expect(service.createMultipleRankingScores).toHaveBeenCalledWith({
+        ...createMultipleScoresDto,
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+      });
       expect(result).toEqual(expectedResult);
     });
   });

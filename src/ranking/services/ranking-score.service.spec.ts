@@ -3,6 +3,7 @@ import { RankingScoreService } from './ranking-score.service';
 import { RankingScoreRepository } from '../repositories/ranking-score.repository';
 import { RankingValidationsService } from './ranking-validations.service';
 import CreateRankingItemScoreDto from '../dto/create-ranking-item-score.dto';
+import CreateMultipleRankingItemScoresDto from '../dto/create-multiple-ranking-item-scores.dto';
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
 import { ExpoPushService } from 'src/shared/services/expo-push.service';
 
@@ -227,6 +228,253 @@ describe('RankingScoreService', () => {
       mockRankingScoreRepository.getRankingScoreById.mockResolvedValue(null);
 
       await expect(service.updateRankingScore(rankingScoreId, newScore)).rejects.toThrow('Pontuação do item do ranking não encontrada 😔');
+    });
+  });
+
+  describe('createMultipleRankingScores', () => {
+    it('should create multiple new ranking scores', async () => {
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'criteria-1', score: 8.5 },
+          { rankingCriteriaId: 'criteria-2', score: 9.0 },
+          { rankingCriteriaId: 'criteria-3', score: 7.5 },
+        ],
+      };
+
+      const mockRankingItem = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item',
+      };
+
+      const mockCreatedScores = [
+        {
+          id: 'score-1',
+          rankingItemId: 'item-id',
+          userId: 'user-id',
+          rankingCriteriaId: 'criteria-1',
+          score: 8.5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'score-2',
+          rankingItemId: 'item-id',
+          userId: 'user-id',
+          rankingCriteriaId: 'criteria-2',
+          score: 9.0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'score-3',
+          rankingItemId: 'item-id',
+          userId: 'user-id',
+          rankingCriteriaId: 'criteria-3',
+          score: 7.5,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
+      mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingItemCriteriaScore.mockResolvedValue(null);
+      mockRankingScoreRepository.createRankingScore.mockResolvedValueOnce(mockCreatedScores[0]);
+      mockRankingScoreRepository.createRankingScore.mockResolvedValueOnce(mockCreatedScores[1]);
+      mockRankingScoreRepository.createRankingScore.mockResolvedValueOnce(mockCreatedScores[2]);
+
+      const result = await service.createMultipleRankingScores(createMultipleScoresDto);
+
+      expect(rankingValidationsService.existRankingItem).toHaveBeenCalledWith('item-id');
+      expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledTimes(3);
+      expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledWith('criteria-1');
+      expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledWith('criteria-2');
+      expect(rankingValidationsService.existRankingCriteria).toHaveBeenCalledWith('criteria-3');
+      expect(rankingScoreRepository.createRankingScore).toHaveBeenCalledTimes(3);
+      expect(result.message).toBe('3 score(s) processado(s) com sucesso');
+      expect(result.summary.created).toBe(3);
+      expect(result.summary.updated).toBe(0);
+      expect(result.summary.total).toBe(3);
+      expect(result.results).toHaveLength(3);
+    });
+
+    it('should update existing scores and create new ones', async () => {
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'criteria-1', score: 8.5 },
+          { rankingCriteriaId: 'criteria-2', score: 9.0 },
+        ],
+      };
+
+      const mockRankingItem = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item',
+      };
+
+      const existingScore = {
+        id: 'existing-score-id',
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        rankingCriteriaId: 'criteria-1',
+        score: 7.0,
+      };
+
+      const mockUpdatedScore = {
+        ...existingScore,
+        score: 8.5,
+        updatedAt: new Date(),
+      };
+
+      const mockCreatedScore = {
+        id: 'new-score-id',
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        rankingCriteriaId: 'criteria-2',
+        score: 9.0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
+      mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingItemCriteriaScore
+        .mockResolvedValueOnce(existingScore) // First score exists
+        .mockResolvedValueOnce(null); // Second score doesn't exist
+      mockRankingScoreRepository.updateRankingScore.mockResolvedValue(mockUpdatedScore);
+      mockRankingScoreRepository.createRankingScore.mockResolvedValue(mockCreatedScore);
+
+      const result = await service.createMultipleRankingScores(createMultipleScoresDto);
+
+      expect(rankingScoreRepository.updateRankingScore).toHaveBeenCalledWith('existing-score-id', { score: 8.5 });
+      expect(rankingScoreRepository.createRankingScore).toHaveBeenCalledWith({
+        userId: 'user-id',
+        score: 9.0,
+        rankingItemId: 'item-id',
+        rankingCriteriaId: 'criteria-2',
+      });
+      expect(result.summary.created).toBe(1);
+      expect(result.summary.updated).toBe(1);
+      expect(result.summary.total).toBe(2);
+    });
+
+    it('should send push notification after processing all scores', async () => {
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'criteria-1', score: 8.5 },
+        ],
+      };
+
+      const mockRankingItem = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item',
+      };
+
+      const mockCreatedScore = {
+        id: 'score-1',
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        rankingCriteriaId: 'criteria-1',
+        score: 8.5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
+      mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingItemCriteriaScore.mockResolvedValue(null);
+      mockRankingScoreRepository.createRankingScore.mockResolvedValue(mockCreatedScore);
+      mockRankingUserRepository.getRankingUsersPushTokens.mockResolvedValue(['token1', 'token2']);
+
+      await service.createMultipleRankingScores(createMultipleScoresDto);
+
+      expect(rankingUserRepository.getRankingUsersPushTokens).toHaveBeenCalledWith('ranking-id', 'user-id');
+      expect(expoPushService.sendBulkPushNotifications).toHaveBeenCalledWith(
+        ['token1', 'token2'],
+        'Item avaliado 📝',
+        'Um item do ranking foi completamente avaliado.',
+      );
+    });
+
+    it('should handle push notification errors gracefully', async () => {
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'criteria-1', score: 8.5 },
+        ],
+      };
+
+      const mockRankingItem = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item',
+      };
+
+      const mockCreatedScore = {
+        id: 'score-1',
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        rankingCriteriaId: 'criteria-1',
+        score: 8.5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
+      mockRankingValidationsService.existRankingCriteria.mockResolvedValue(undefined);
+      mockRankingValidationsService.existRankingItemCriteriaScore.mockResolvedValue(null);
+      mockRankingScoreRepository.createRankingScore.mockResolvedValue(mockCreatedScore);
+      mockRankingUserRepository.getRankingUsersPushTokens.mockRejectedValue(new Error('Push error'));
+
+      // Should not throw error even if push notification fails
+      const result = await service.createMultipleRankingScores(createMultipleScoresDto);
+
+      expect(result.message).toBe('1 score(s) processado(s) com sucesso');
+      expect(result.summary.total).toBe(1);
+    });
+
+    it('should throw error if ranking item does not exist', async () => {
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'invalid-item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'criteria-1', score: 8.5 },
+        ],
+      };
+
+      mockRankingValidationsService.existRankingItem.mockRejectedValue(new Error('Item not found'));
+
+      await expect(service.createMultipleRankingScores(createMultipleScoresDto)).rejects.toThrow();
+    });
+
+    it('should throw error if criteria does not exist', async () => {
+      const createMultipleScoresDto: CreateMultipleRankingItemScoresDto = {
+        rankingItemId: 'item-id',
+        userId: 'user-id',
+        scores: [
+          { rankingCriteriaId: 'invalid-criteria-id', score: 8.5 },
+        ],
+      };
+
+      const mockRankingItem = {
+        id: 'item-id',
+        rankingId: 'ranking-id',
+        name: 'Test Item',
+      };
+
+      mockRankingValidationsService.existRankingItem.mockResolvedValue(mockRankingItem);
+      mockRankingValidationsService.existRankingCriteria.mockRejectedValue(new Error('Criteria not found'));
+
+      await expect(service.createMultipleRankingScores(createMultipleScoresDto)).rejects.toThrow();
     });
   });
 }); 
