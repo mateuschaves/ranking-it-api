@@ -15,10 +15,17 @@ export class UserRepository {
     }
   }
 
-  async findOne(where: Prisma.UserWhereUniqueInput, includeAvatar = false) {
+  async findOne(
+    where: Prisma.UserWhereInput,
+    includeAvatar = false,
+    includeDeleted = false,
+  ) {
     try {
-      return await this.prismaService.user.findUnique({
-        where,
+      return await this.prismaService.user.findFirst({
+        where: {
+          ...where,
+          ...(includeDeleted ? {} : { deletedAt: null }),
+        },
         ...(includeAvatar && { include: { avatar: true } }),
       });
     } catch (e) {
@@ -29,8 +36,11 @@ export class UserRepository {
 
   async findByEmail(email: string) {
     try {
-      return await this.prismaService.user.findUnique({
-        where: { email },
+      return await this.prismaService.user.findFirst({
+        where: {
+          email,
+          deletedAt: null,
+        },
       });
     } catch (e) {
       Logger.error('Error in UserRepository.findByEmail', e);
@@ -41,7 +51,10 @@ export class UserRepository {
   async findByRefreshToken(refreshToken: string) {
     try {
       return await this.prismaService.user.findFirst({
-        where: { refreshToken },
+        where: {
+          refreshToken,
+          deletedAt: null,
+        },
       });
     } catch (e) {
       Logger.error('Error in UserRepository.findByRefreshToken', e);
@@ -51,7 +64,9 @@ export class UserRepository {
 
   async findMany() {
     try {
-      return await this.prismaService.user.findMany();
+      return await this.prismaService.user.findMany({
+        where: { deletedAt: null },
+      });
     } catch (e) {
       Logger.error('Error in UserRepository.findMany', e);
       throw e;

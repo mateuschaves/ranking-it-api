@@ -6,6 +6,7 @@ import { RankingValidationsService } from './ranking-validations.service';
 import CreateRankingItemDto from '../dto/create-ranking-item.dto';
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
 import { ExpoPushService } from 'src/shared/services/expo-push.service';
+import { UserContentBlockRepository } from 'src/user/repositories/user-content-block.repository';
 
 describe('RankingItemService', () => {
   let service: RankingItemService;
@@ -14,6 +15,7 @@ describe('RankingItemService', () => {
   let rankingValidationsService: RankingValidationsService;
   let rankingUserRepository: RankingUserRepository;
   let expoPushService: ExpoPushService;
+  let userContentBlockRepository: UserContentBlockRepository;
 
   const mockRankingItemRepository = {
     createRankingItem: jest.fn(),
@@ -44,6 +46,10 @@ describe('RankingItemService', () => {
     sendBulkPushNotifications: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockUserContentBlockRepository = {
+    getBlockedUserIds: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +74,10 @@ describe('RankingItemService', () => {
           provide: ExpoPushService,
           useValue: mockExpoPushService,
         },
+        {
+          provide: UserContentBlockRepository,
+          useValue: mockUserContentBlockRepository,
+        },
       ],
     }).compile();
 
@@ -77,6 +87,7 @@ describe('RankingItemService', () => {
     rankingValidationsService = module.get<RankingValidationsService>(RankingValidationsService);
     rankingUserRepository = module.get<RankingUserRepository>(RankingUserRepository);
     expoPushService = module.get<ExpoPushService>(ExpoPushService);
+    userContentBlockRepository = module.get<UserContentBlockRepository>(UserContentBlockRepository);
   });
 
   afterEach(() => {
@@ -322,6 +333,7 @@ describe('RankingItemService', () => {
 
       mockRankingValidationsService.existRanking.mockResolvedValue(undefined);
       mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+    mockUserContentBlockRepository.getBlockedUserIds.mockResolvedValue([]);
       mockRankingItemRepository.getRankingItems.mockResolvedValue(mockItems);
       mockRankingScoreRepository.getAvgRankingItemScore
         .mockResolvedValueOnce({ score: 8.5 })
@@ -331,7 +343,11 @@ describe('RankingItemService', () => {
 
       expect(rankingValidationsService.existRanking).toHaveBeenCalledWith(rankingId);
       expect(rankingValidationsService.existRankingUser).toHaveBeenCalledWith(rankingId, userId);
-      expect(rankingItemRepository.getRankingItems).toHaveBeenCalledWith(rankingId);
+    expect(userContentBlockRepository.getBlockedUserIds).toHaveBeenCalledWith(userId);
+    expect(rankingItemRepository.getRankingItems).toHaveBeenCalledWith(
+      rankingId,
+      [],
+    );
       expect(result).toEqual(expectedResult);
     });
 
@@ -358,6 +374,7 @@ describe('RankingItemService', () => {
 
       mockRankingValidationsService.existRanking.mockResolvedValue(undefined);
       mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+    mockUserContentBlockRepository.getBlockedUserIds.mockResolvedValue([]);
       mockRankingItemRepository.getRankingItems.mockResolvedValue(mockItems);
       mockRankingScoreRepository.getAvgRankingItemScore.mockResolvedValue({ score: null });
 
@@ -380,13 +397,37 @@ describe('RankingItemService', () => {
 
       mockRankingValidationsService.existRanking.mockResolvedValue(undefined);
       mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+    mockUserContentBlockRepository.getBlockedUserIds.mockResolvedValue(['blocked-user']);
       mockRankingItemRepository.getRankingItems.mockResolvedValue(mockItems);
       // Simulate Prisma Decimal/string-like value
       mockRankingScoreRepository.getAvgRankingItemScore.mockResolvedValue({ score: '8.5' } as any);
 
       const result = await service.getRankingItems(rankingId, userId);
 
+    expect(rankingItemRepository.getRankingItems).toHaveBeenCalledWith(
+      rankingId,
+      ['blocked-user'],
+    );
       expect(result).toEqual(expectedResult);
+    });
+
+  it('should skip blocked user items when blocking list not empty', async () => {
+    const rankingId = 'ranking-id';
+    const userId = 'user-id';
+
+    mockRankingValidationsService.existRanking.mockResolvedValue(undefined);
+    mockRankingValidationsService.existRankingUser.mockResolvedValue(undefined);
+    mockUserContentBlockRepository.getBlockedUserIds.mockResolvedValue([
+      'blocked-user',
+    ]);
+    mockRankingItemRepository.getRankingItems.mockResolvedValue([]);
+
+    await service.getRankingItems(rankingId, userId);
+
+    expect(rankingItemRepository.getRankingItems).toHaveBeenCalledWith(
+      rankingId,
+      ['blocked-user'],
+    );
     });
   });
 

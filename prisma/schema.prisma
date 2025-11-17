@@ -13,6 +13,8 @@ model User {
   email                String                 @unique
   name                 String?
   password             String
+  deletedAt            DateTime?
+  deactivationReason   String?
   refreshToken         String?
   pushToken            String?
   createdAt            DateTime               @default(now())
@@ -24,6 +26,9 @@ model User {
   rankingItemComment   RankingItemComment[]
   rankingItemScore     RankingItemScore[]
   rankingItemUserPhoto RankingItemUserPhoto[]
+  abuseReports         AbuseReport[]
+  blockedUsers         UserContentBlock[]     @relation("UserBlockedUsers")
+  blockedBy            UserContentBlock[]     @relation("UserBlockedBy")
   avatar               File?                  @relation(fields: [avatarId], references: [id])
   userRanking          UserRanking[]
 }
@@ -43,6 +48,7 @@ model Ranking {
   rankingCriteria RankingCriteria[]
   rankingInvite   RankingInvite[]
   rankingItem     RankingItem[]
+  abuseReports    AbuseReport[]
   userRanking     UserRanking[]
 }
 
@@ -64,6 +70,7 @@ model RankingItem {
   rankingItemComment   RankingItemComment[]
   rankingItemScore     RankingItemScore[]
   rankingItemUserPhoto RankingItemUserPhoto[]
+  abuseReports         AbuseReport[]
 }
 
 model RankingCriteria {
@@ -131,6 +138,50 @@ model RankingInvite {
   updatedAt   DateTime @updatedAt
   invitedBy   User     @relation(fields: [invitedById], references: [id])
   ranking     Ranking  @relation(fields: [rankingId], references: [id])
+}
+
+enum AbuseTargetType {
+  RANKING
+  ITEM
+}
+
+enum AbuseStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+model AbuseReport {
+  id            String          @id @default(cuid())
+  targetType    AbuseTargetType
+  status        AbuseStatus     @default(PENDING)
+  description   String
+  rankingId     String?
+  rankingItemId String?
+  reportedById  String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  ranking       Ranking?        @relation(fields: [rankingId], references: [id])
+  rankingItem   RankingItem?    @relation(fields: [rankingItemId], references: [id])
+  reportedBy    User            @relation(fields: [reportedById], references: [id])
+
+  @@index([rankingId])
+  @@index([rankingItemId])
+  @@index([reportedById])
+}
+
+model UserContentBlock {
+  id             String   @id @default(cuid())
+  blockerId      String
+  blockedUserId  String
+  createdAt      DateTime @default(now())
+
+  blocker        User     @relation("UserBlockedUsers", fields: [blockerId], references: [id])
+  blockedUser    User     @relation("UserBlockedBy", fields: [blockedUserId], references: [id])
+
+  @@unique([blockerId, blockedUserId])
+  @@index([blockerId])
+  @@index([blockedUserId])
 }
 
 model File {

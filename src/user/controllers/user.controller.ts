@@ -1,6 +1,22 @@
-import { Body, Controller, Post, Get, UseGuards, Patch } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  UseGuards,
+  Patch,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
 import SignUpDto from '../dto/SignUpDto';
 import SignInDto from '../dto/SignInDto';
@@ -11,7 +27,10 @@ import { RankingUserRepository } from '../../ranking/repositories/ranking-user.r
 import { UserRepository } from '../repositories/user.repository';
 import { UpdateAvatarDto } from '../dto/UpdateAvatarDto';
 import { UpdatePushTokenDto } from '../dto/UpdatePushTokenDto';
+import { DeactivateAccountDto } from '../dto/deactivate-account.dto';
 import { UrlUtil } from '../../shared/utils/url.util';
+import { UserContentBlockService } from '../services/user-content-block.service';
+import { BlockUserDto } from '../dto/block-user.dto';
 
 @ApiTags('User Authentication')
 @Controller('user')
@@ -20,6 +39,7 @@ export class UserController {
     private readonly userService: UserService,
     private readonly userRepository: UserRepository,
     private readonly rankingUserRepository: RankingUserRepository,
+    private readonly userContentBlockService: UserContentBlockService,
   ) {}
 
   @Post('/signup')
@@ -201,5 +221,71 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Não autorizado. Token JWT ausente ou inválido.' })
   async updatePushToken(@GetUser() userId: string, @Body() body: UpdatePushTokenDto) {
     return this.userService.updatePushToken(userId, body.pushToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/blocks')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar usuários bloqueados' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuários bloqueados',
+  })
+  async listBlockedUsers(@GetUser() userId: string) {
+    return this.userContentBlockService.listBlockedUsers(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/blocks')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bloquear conteúdo de um usuário' })
+  @ApiBody({ type: BlockUserDto })
+  async blockUser(@GetUser() userId: string, @Body() body: BlockUserDto) {
+    return this.userContentBlockService.blockUser(userId, body.blockedUserId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/blocks/:blockedUserId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Desbloquear conteúdo de um usuário' })
+  @ApiParam({ name: 'blockedUserId', description: 'ID do usuário bloqueado' })
+  async unblockUser(
+    @GetUser() userId: string,
+    @Param('blockedUserId') blockedUserId: string,
+  ) {
+    return this.userContentBlockService.unblockUser(userId, blockedUserId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/:userId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Desativar conta do usuário logado (deleção lógica)' })
+  @ApiParam({ name: 'userId', description: 'ID do usuário a ser desativado' })
+  @ApiBody({ type: DeactivateAccountDto, required: false })
+  @ApiResponse({
+    status: 200,
+    description: 'Conta desativada com sucesso',
+    schema: { example: { message: 'Conta desativada com sucesso ✅' } },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Usuário autenticado diferente do usuário alvo',
+    schema: { example: { message: 'Você só pode desativar a sua própria conta 😬' } },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Usuário não encontrado ou já desativado',
+    schema: { example: { message: 'Usuário não encontrado ou já desativado 😕' } },
+  })
+  async deactivateAccount(
+    @Param('userId') userId: string,
+    @GetUser() authenticatedUserId: string,
+    @Body() body?: DeactivateAccountDto,
+  ) {
+    return this.userService.deactivateAccount(
+      userId,
+      authenticatedUserId,
+      body?.reason,
+    );
   }
 }

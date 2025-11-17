@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -196,6 +197,51 @@ export class UserService {
         throw error;
       }
       throw new InternalServerErrorException('Erro ao atualizar push token');
+    }
+  }
+
+  async deactivateAccount(
+    userId: string,
+    authenticatedUserId: string,
+    reason?: string,
+  ) {
+    try {
+      Logger.log(
+        `Deactivating account for user ${userId}`,
+        'UserService.deactivateAccount',
+      );
+
+      if (userId !== authenticatedUserId) {
+        throw new ForbiddenException(
+          'Você só pode desativar a sua própria conta 😬',
+        );
+      }
+
+      const user = await this.userRepository.findOne({ id: userId });
+
+      if (!user) {
+        throw new BadRequestException(
+          'Usuário não encontrado ou já desativado 😕',
+        );
+      }
+
+      await this.userRepository.updateById(userId, {
+        deletedAt: new Date(),
+        deactivationReason: reason || null,
+        refreshToken: null,
+        pushToken: null,
+      });
+
+      return { message: 'Conta desativada com sucesso ✅' };
+    } catch (error) {
+      Logger.error(error, 'UserService.deactivateAccount');
+      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Não foi possível desativar a conta 😔',
+      );
     }
   }
 
