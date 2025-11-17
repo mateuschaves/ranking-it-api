@@ -3,7 +3,7 @@ import { UserService } from './user.service';
 import { UserRepository } from '../repositories/user.repository';
 import { JwtService } from '@nestjs/jwt';
 import { EncryptService } from '../../shared/services/encrypt.service';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
@@ -173,6 +173,75 @@ describe('UserService', () => {
         message: 'Push token atualizado com sucesso',
       });
       expect(userRepository.updateById).toHaveBeenCalledWith(userId, { pushToken: newPushToken });
+    });
+  });
+
+  describe('deactivateAccount', () => {
+    const userId = 'user-123';
+
+    it('should deactivate account when user matches authenticated user', async () => {
+      const mockUser = { id: userId };
+      userRepository.findOne.mockResolvedValue(mockUser as any);
+      userRepository.updateById.mockResolvedValue({} as any);
+
+      const result = await service.deactivateAccount(userId, userId);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: userId });
+      expect(userRepository.updateById).toHaveBeenCalledWith(userId, {
+        deletedAt: expect.any(Date),
+        deactivationReason: null,
+        refreshToken: null,
+        pushToken: null,
+      });
+      expect(result).toEqual({ message: 'Conta desativada com sucesso ✅' });
+    });
+
+    it('should deactivate account with reason when provided', async () => {
+      const mockUser = { id: userId };
+      const reason = 'Não estou mais usando o aplicativo';
+      userRepository.findOne.mockResolvedValue(mockUser as any);
+      userRepository.updateById.mockResolvedValue({} as any);
+
+      const result = await service.deactivateAccount(userId, userId, reason);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ id: userId });
+      expect(userRepository.updateById).toHaveBeenCalledWith(userId, {
+        deletedAt: expect.any(Date),
+        deactivationReason: reason,
+        refreshToken: null,
+        pushToken: null,
+      });
+      expect(result).toEqual({ message: 'Conta desativada com sucesso ✅' });
+    });
+
+    it('should throw ForbiddenException when user ids differ', async () => {
+      await expect(
+        service.deactivateAccount(userId, 'another-user'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+      expect(userRepository.updateById).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when user not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      await expect(
+        service.deactivateAccount(userId, userId),
+      ).rejects.toThrow(
+        new BadRequestException('Usuário não encontrado ou já desativado 😕'),
+      );
+      expect(userRepository.updateById).not.toHaveBeenCalled();
+    });
+
+    it('should throw InternalServerErrorException when update fails', async () => {
+      const mockUser = { id: userId };
+      userRepository.findOne.mockResolvedValue(mockUser as any);
+      userRepository.updateById.mockRejectedValue(new Error('DB error'));
+
+      await expect(
+        service.deactivateAccount(userId, userId),
+      ).rejects.toThrow(
+        new InternalServerErrorException('Não foi possível desativar a conta 😔'),
+      );
     });
   });
 });

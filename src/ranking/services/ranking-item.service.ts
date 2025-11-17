@@ -6,6 +6,7 @@ import { RankingScoreRepository } from '../repositories/ranking-score.repository
 import { RankingUserRepository } from '../repositories/ranking-user.repository';
 import { ExpoPushService } from 'src/shared/services/expo-push.service';
 import UpdateRankingItemDto from '../dto/update-ranking-item.dto';
+import { UserContentBlockRepository } from 'src/user/repositories/user-content-block.repository';
 
 @Injectable()
 export class RankingItemService {
@@ -15,6 +16,7 @@ export class RankingItemService {
     private readonly rankingValidationsService: RankingValidationsService,
     private readonly rankingUserRepository: RankingUserRepository,
     private readonly expoPushService: ExpoPushService,
+    private readonly userContentBlockRepository: UserContentBlockRepository,
   ) {}
 
   async createRankingItem(createRankingItemDto: CreateRankingItemDto) {
@@ -85,8 +87,14 @@ export class RankingItemService {
         this.rankingValidationsService.existRankingUser(rankingId, userId),
       ]);
 
+      const blockedUserIds =
+        await this.userContentBlockRepository.getBlockedUserIds(userId);
+
       const rankingItems =
-        await this.rankingItemRepository.getRankingItems(rankingId);
+        await this.rankingItemRepository.getRankingItems(
+          rankingId,
+          blockedUserIds,
+        );
 
       return (
         await Promise.all(

@@ -16,6 +16,10 @@ import { RankingInviteService } from './services/ranking-invite.service';
 import { RankingInviteController } from './controllers/ranking-invite.controller';
 import { BucketService } from 'src/shared/services/bucket.service';
 import { AiModule } from 'src/ai/ai.module';
+import { RankingAbuseReportController } from './controllers/ranking-abuse-report.controller';
+import { RankingAbuseReportService } from './services/ranking-abuse-report.service';
+import { AbuseReportRepository } from './repositories/abuse-report.repository';
+import { UserContentBlockRepository } from 'src/user/repositories/user-content-block.repository';
 
 @Module({
   controllers: [
@@ -23,6 +27,7 @@ import { AiModule } from 'src/ai/ai.module';
     RankingItemController,
     RankingScoreController,
     RankingInviteController,
+    RankingAbuseReportController,
   ],
   providers: [
     RankingService,
@@ -31,11 +36,14 @@ import { AiModule } from 'src/ai/ai.module';
     RankingUserService,
     RankingScoreService,
     RankingInviteService,
+    RankingAbuseReportService,
     UserRepository,
+    UserContentBlockRepository,
     RankingRepository,
     RankingItemRepository,
     RankingUserRepository,
     RankingScoreRepository,
+    AbuseReportRepository,
     BucketService,
   ],
   imports: [AiModule],

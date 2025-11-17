@@ -27,13 +27,22 @@ export class RankingItemRepository {
     }
   }
 
-  async getRankingItems(rankingId: string) {
+  async getRankingItems(rankingId: string, blockedUserIds: string[] = []) {
     try {
+      const where: Prisma.RankingItemWhereInput = {
+        rankingId,
+        deletedAt: null,
+        ...(blockedUserIds?.length
+          ? {
+              createdById: {
+                notIn: blockedUserIds,
+              },
+            }
+          : {}),
+      };
+
       const items = await this.prismaService.rankingItem.findMany({
-        where: {
-          rankingId,
-          deletedAt: null,
-        },
+        where,
         omit: {
           rankingId: true,
           createdById: true,
