@@ -75,7 +75,7 @@ jobs:
           # Executar novo container
           echo "🐳 Starting new container..."
           docker run -d \
-            --env-file .env
+            --env-file .env \
             --name rankingit-app \
             --restart unless-stopped \
             -p 3000:3000 \
