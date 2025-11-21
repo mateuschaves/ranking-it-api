@@ -3,16 +3,11 @@ name: Build and Push to OCIR
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
 
 env:
   REGISTRY: sa-saopaulo-1.ocir.io
   REPOSITORY: rankingit
   IMAGE_NAME: rankingit-api
-  # OCIR_NAMESPACE: Configure o secret OCIR_NAMESPACE no GitHub
-  # Para encontrar o namespace: Console OCI -> Developer Services -> Container Registry -> Settings
-  # Ou execute: oci os ns get
 
 jobs:
   build-and-unit-test:
