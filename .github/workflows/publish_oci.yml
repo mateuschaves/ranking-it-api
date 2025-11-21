@@ -10,6 +10,7 @@ env:
   REGISTRY: sa-saopaulo-1.ocir.io
   REPOSITORY: mateushenriquechaves1/rankingit
   IMAGE_NAME: rankingit-api
+  TENANT_NAME: mateushenriquechaves1
 
 jobs:
   build-and-push:
@@ -26,8 +27,8 @@ jobs:
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
-        username: '${{ secrets.OCIR_USERNAME }}'
-        password: '${{ secrets.OCIR_PASSWORD }}'
+        username: ${{ env.TENANT_NAME }}/${{ secrets.OCIR_USERNAME }}
+        password: ${{ secrets.OCIR_PASSWORD }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
