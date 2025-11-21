@@ -84,17 +84,6 @@ jobs:
           ENVEOF
           chmod 600 rankingit.env
 
-    - name: Stop existing container
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.OCI_VM_HOST }}
-        username: ${{ secrets.OCI_VM_USER }}
-        key: ${{ secrets.OCI_VM_SSH_KEY }}
-        script: |
-          echo "🛑 Stopping existing container..."
-          docker stop rankingit-app || true
-          docker rm rankingit-app || true
-
     - name: Pull Docker image
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -105,32 +94,32 @@ jobs:
           echo "📥 Pulling new image..."
           docker pull ${{ env.REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
-    - name: Start new container
+    - name: Start new container (temporary)
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.OCI_VM_HOST }}
         username: ${{ secrets.OCI_VM_USER }}
         key: ${{ secrets.OCI_VM_SSH_KEY }}
         script: |
-          echo "🐳 Starting new container..."
+          echo "🐳 Starting new container in temporary mode..."
           docker run -d \
             --env-file rankingit.env \
-            --name rankingit-app \
-            --restart unless-stopped \
-            -p 3000:3000 \
+            --name rankingit-app-new \
+            --restart no \
+            -p 3001:3000 \
             ${{ env.REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
-    - name: Health check
+    - name: Health check new container
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.OCI_VM_HOST }}
         username: ${{ secrets.OCI_VM_USER }}
         key: ${{ secrets.OCI_VM_SSH_KEY }}
         script: |
-          echo "🏥 Checking application health..."
+          echo "🏥 Checking new container health..."
           max_attempts=30
           attempt=0
-          health_check_url="http://localhost:3000/health"
+          health_check_url="http://localhost:3001/health"
           
           while [ $attempt -lt $max_attempts ]; do
             response=$(curl -f -s -w "\n%{http_code}" "$health_check_url" || echo -e "\n000")
@@ -138,20 +127,112 @@ jobs:
             body=$(echo "$response" | sed '$d')
             
             if [ "$http_code" = "200" ]; then
-              echo "✅ Health check passed!"
+              echo "✅ New container health check passed!"
               echo "$body"
               exit 0
             fi
             
             attempt=$((attempt + 1))
-            echo "⏳ Waiting for application to be ready... (attempt $attempt/$max_attempts)"
+            echo "⏳ Waiting for new container to be ready... (attempt $attempt/$max_attempts)"
             sleep 2
           done
           
-          echo "❌ Health check failed after $max_attempts attempts (HTTP $http_code)"
-          echo "📋 Application logs:"
-          docker logs rankingit-app --tail 50
+          echo "❌ New container health check failed after $max_attempts attempts (HTTP $http_code)"
+          echo "📋 New container logs:"
+          docker logs rankingit-app-new --tail 50
+          echo "🛑 Cleaning up failed new container..."
+          docker stop rankingit-app-new || true
+          docker rm rankingit-app-new || true
           exit 1
+
+    - name: Switch to new container
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.OCI_VM_HOST }}
+        username: ${{ secrets.OCI_VM_USER }}
+        key: ${{ secrets.OCI_VM_SSH_KEY }}
+        script: |
+          echo "🔄 Switching to new container with zero-downtime strategy..."
+          
+          # Check if old container exists
+          OLD_CONTAINER_EXISTS=$(docker ps -a --filter "name=rankingit-app" --format "{{.Names}}" | grep -q rankingit-app && echo "yes" || echo "no")
+          
+          if [ "$OLD_CONTAINER_EXISTS" = "yes" ]; then
+            # Rename old container for safety (for potential rollback)
+            echo "📦 Renaming old container for safety..."
+            docker rename rankingit-app rankingit-app-old || true
+          fi
+          
+          # Stop temporary new container and prepare for production
+          echo "⏸️ Stopping temporary new container..."
+          docker stop rankingit-app-new || true
+          
+          # Start new container with production name and port
+          echo "🚀 Starting new container in production mode..."
+          NEW_CONTAINER_STARTED=false
+          if docker run -d \
+            --env-file rankingit.env \
+            --name rankingit-app \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            ${{ env.REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest; then
+            NEW_CONTAINER_STARTED=true
+            echo "✅ New container started successfully"
+          else
+            echo "❌ Failed to start new container"
+            # Rollback: restore old container if it existed
+            if [ "$OLD_CONTAINER_EXISTS" = "yes" ]; then
+              echo "🔄 Rolling back to old container..."
+              docker rename rankingit-app-old rankingit-app || true
+              docker start rankingit-app || true
+            fi
+            exit 1
+          fi
+          
+          # Wait a moment for container to start accepting connections
+          sleep 2
+          
+          # Quick health check on new production container (with retries)
+          echo "🏥 Verifying new production container health..."
+          HEALTH_CHECK_PASSED=false
+          for i in {1..10}; do
+            if curl -f -s http://localhost:3000/health > /dev/null 2>&1; then
+              HEALTH_CHECK_PASSED=true
+              echo "✅ Production container health check passed!"
+              break
+            fi
+            echo "⏳ Health check attempt $i/10..."
+            sleep 1
+          done
+          
+          if [ "$HEALTH_CHECK_PASSED" = "false" ]; then
+            echo "❌ Production container health check failed!"
+            echo "📋 Container logs:"
+            docker logs rankingit-app --tail 50
+            
+            # Rollback: stop new container and restore old one
+            echo "🔄 Rolling back to old container..."
+            docker stop rankingit-app || true
+            docker rm rankingit-app || true
+            
+            if [ "$OLD_CONTAINER_EXISTS" = "yes" ]; then
+              docker rename rankingit-app-old rankingit-app || true
+              docker start rankingit-app || true
+              echo "✅ Old container restored"
+            fi
+            
+            exit 1
+          fi
+          
+          # If we got here, new container is healthy - safe to remove old one
+          echo "🗑️ Removing old container..."
+          docker stop rankingit-app-old || true
+          docker rm rankingit-app-old || true
+          
+          # Remove temporary container
+          docker rm rankingit-app-new || true
+          
+          echo "✅ Zero-downtime switch completed successfully!"
 
     - name: Cleanup and verify
       uses: appleboy/ssh-action@v1.0.3
