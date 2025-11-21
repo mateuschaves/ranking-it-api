@@ -3,8 +3,6 @@ name: Build and Push to OCIR
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
 
 env:
   REGISTRY: sa-saopaulo-1.ocir.io
