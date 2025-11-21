@@ -120,6 +120,39 @@ jobs:
             -p 3000:3000 \
             ${{ env.REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
+    - name: Health check
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.OCI_VM_HOST }}
+        username: ${{ secrets.OCI_VM_USER }}
+        key: ${{ secrets.OCI_VM_SSH_KEY }}
+        script: |
+          echo "🏥 Checking application health..."
+          max_attempts=30
+          attempt=0
+          health_check_url="http://localhost:3000/health"
+          
+          while [ $attempt -lt $max_attempts ]; do
+            response=$(curl -f -s -w "\n%{http_code}" "$health_check_url" || echo -e "\n000")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+            
+            if [ "$http_code" = "200" ]; then
+              echo "✅ Health check passed!"
+              echo "$body"
+              exit 0
+            fi
+            
+            attempt=$((attempt + 1))
+            echo "⏳ Waiting for application to be ready... (attempt $attempt/$max_attempts)"
+            sleep 2
+          done
+          
+          echo "❌ Health check failed after $max_attempts attempts (HTTP $http_code)"
+          echo "📋 Application logs:"
+          docker logs rankingit-app --tail 50
+          exit 1
+
     - name: Cleanup and verify
       uses: appleboy/ssh-action@v1.0.3
       with:
